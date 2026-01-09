@@ -61,9 +61,9 @@ runs:
         }
 
         if [[ -n "${{ inputs.vcs-server }}" ]]; then
-          add_prop "vcs.server" "${{ inputs.vcs-server }}"
-          add_prop "vcs.database" "${{ inputs.vcs-database }}"
-          add_prop "vcs.db" "${{ inputs.vcs-db }}"
+          add_prop "nuxeo.test.vcs.server" "${{ inputs.vcs-server }}"
+          add_prop "nuxeo.test.vcs.database" "${{ inputs.vcs-database }}"
+          add_prop "nuxeo.test.vcs.db" "${{ inputs.vcs-db }}"
         fi
 
         if [[ -n "${{ inputs.mongodb-server }}" ]]; then
