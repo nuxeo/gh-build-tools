@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Default branch: main
+  # GitHub Actions version updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    groups:
+      minor-updates:
+        applies-to: "version-updates"
+        update-types:
+          - "minor"
+      patch-updates:
+        applies-to: "version-updates"
+        update-types:
+          - "patch"
+    ignore:
+      # Major version updates
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+      # Ignore self updates to prevent infinite updates
+      # TODO deal the self update mechanism with a custom workflow
+      - dependency-name: "nuxeo/gh-build-tools"
+
