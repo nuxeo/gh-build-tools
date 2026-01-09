@@ -7,6 +7,7 @@ Here follows the list of GitHub Actions topics available in the current document
 - [gh-build-tools](#gh-build-tools)
   - [GitHub Actions](#github-actions)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
+    - [nuxeo-mvn-properties](#nuxeo-mvn-properties)
   - [Release](#release)
 
 ## GitHub Actions
@@ -55,6 +56,26 @@ Check `action.yml` for the full list of inputs and their description.
 Outputs:
 
 - map: JSON object mapping service names to their forwarded localhost ports
+
+### nuxeo-mvn-properties
+
+Generate Maven properties file for Nuxeo tests based on provided inputs.
+
+Example usage:
+
+```yaml
+      - name: Create project properties file
+        uses: nuxeo/gh-build-tools/.github/actions/nuxeo-mvn-properties@OPSEXP-3626-mvn-properties
+        with:
+          environment: mongodb # used to name the properties file
+          kafka-servers: localhost:9092
+          mongodb-server: mongodb://localhost:27017
+          additional-properties: |
+            nuxeo.test.custom.property1=value1
+            nuxeo.test.custom.property2=value2
+```
+
+For the list of all available inputs, check `action.yml` file.
 
 ## Release
 
