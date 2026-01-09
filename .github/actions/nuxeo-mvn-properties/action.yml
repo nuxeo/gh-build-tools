@@ -1,0 +1,88 @@
+name: nuxeo-mvn-properties
+description: Create Maven properties file with optional service configurations.
+inputs:
+  environment:
+    description: Environment name for the properties file
+    required: true
+  path:
+    description: Directory where the file should be created
+    required: false
+    default: "$HOME"
+  vcs-server:
+    description: VCS server
+    required: false
+  vcs-database:
+    description: VCS database name
+    required: false
+    default: "nuxeo"
+  vcs-db:
+    description: VCS database type
+    required: false
+    default: "PostgreSQL"
+  mongodb-server:
+    description: MongoDB server
+    required: false
+  mongodb-dbname:
+    description: MongoDB database name
+    required: false
+    default: "nuxeo"
+  elasticsearch-addressList:
+    description: Elasticsearch address list
+    required: false
+  kafka-servers:
+    description: Kafka servers
+    required: false
+  kafka-stream:
+    description: Kafka stream name
+    required: false
+    default: "kafka"
+  additional-properties:
+    description: Extra properties to append to the end of the file
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Create project properties file
+      shell: bash
+      env:
+        ADDITIONAL_PROPS: ${{ inputs.additional-properties }}
+      run: |
+        PROPERTY_FILE="${{ inputs.path }}/nuxeo-test-${{ inputs.environment }}.properties"
+        
+        echo "# Generated Nuxeo Properties - $(date)" > "$PROPERTY_FILE"
+
+        add_prop() {
+          local key="$1"
+          local value="$2"
+          if [[ -n "$value" ]]; then
+            echo "$key=$value" >> "$PROPERTY_FILE"
+          fi
+        }
+
+        if [[ -n "${{ inputs.vcs-server }}" ]]; then
+          add_prop "vcs.server" "${{ inputs.vcs-server }}"
+          add_prop "vcs.database" "${{ inputs.vcs-database }}"
+          add_prop "vcs.db" "${{ inputs.vcs-db }}"
+        fi
+
+        if [[ -n "${{ inputs.mongodb-server }}" ]]; then
+          add_prop "nuxeo.test.mongodb.server" "${{ inputs.mongodb-server }}"
+          add_prop "nuxeo.test.mongodb.dbname" "${{ inputs.mongodb-dbname }}"
+        fi
+
+        if [[ -n "${{ inputs.elasticsearch-addressList }}" ]]; then
+          add_prop "nuxeo.test.elasticsearch.addressList" "${{ inputs.elasticsearch-addressList }}"
+        fi
+
+        if [[ -n "${{ inputs.kafka-servers }}" ]]; then
+          add_prop "nuxeo.test.kafka.servers" "${{ inputs.kafka-servers }}"
+          add_prop "nuxeo.test.stream" "${{ inputs.kafka-stream }}"
+        fi
+
+        if [[ -n "$ADDITIONAL_PROPS" ]]; then
+          echo -e "\n# Additional User Properties" >> "$PROPERTY_FILE"
+          echo "$ADDITIONAL_PROPS" >> "$PROPERTY_FILE"
+        fi
+
+        echo "Successfully created: $PROPERTY_FILE"
