@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Default branch: main
+  # GitHub Actions Path updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Group all version updates (major, minor and patch)
+    groups:
+      version-updates:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+    ignore:
+      # Major and minor version updates
+      - dependency-name: "*"
+        update-types: [
+          "version-update:semver-major",
+          "version-update:semver-minor"
+        ]
+    labels:
+      - "release/patch"
+
+  # GitHub Actions Path updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Group all version updates (major, minor and patch)
+    groups:
+      version-updates:
+        applies-to: "version-updates"
+        patterns:
+        - "*"
+    ignore:
+      # Major and patch version updates
+      - dependency-name: "*"
+        update-types: [
+          "version-update:semver-major",
+          "version-update:semver-patch"
+        ]
+    labels:
+      - "release/minor"
