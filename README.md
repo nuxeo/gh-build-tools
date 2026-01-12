@@ -8,6 +8,7 @@ Here follows the list of GitHub Actions topics available in the current document
   - [GitHub Actions](#github-actions)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
     - [nuxeo-mvn-properties](#nuxeo-mvn-properties)
+    - [update-nuxeo-parent](#update-nuxeo-parent)
   - [Release](#release)
 
 ## GitHub Actions
@@ -73,6 +74,25 @@ Example usage:
           additional-properties: |
             nuxeo.test.custom.property1=value1
             nuxeo.test.custom.property2=value2
+```
+
+For the list of all available inputs, check `action.yml` file.
+
+### update-nuxeo-parent
+
+Updates if needed the nuxeo-parent version in the pom.xml file to the latest release version.
+
+Example usage:
+
+```yaml
+      - uses: nuxeo/gh-build-tools/.github/actions/update-nuxeo-parent@v0.4.0
+        with:
+          base-branch: "lts-2025"
+          java-version: "21"
+          github-actor: ${{ secrets.PLATFORM_BOT_USERNAME }}
+          github-token: ${{ secrets.PLATFORM_BOT_TOKEN }}
+          mvn-repo-username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          mvn-repo-password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
 ```
 
 For the list of all available inputs, check `action.yml` file.

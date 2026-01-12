@@ -1,0 +1,75 @@
+name: Update Nuxeo Parent
+description: Update nuxeo-parent version in pom.xml using Updatecli
+inputs:
+  github-actor:
+    description: |
+      GitHub actor to use to create PRs, it should be another user than the default github-actions in order to let the
+      bot-auto-merge workflow approve and merge the created PRs.
+    required: true
+  github-token:
+    description: |
+      GitHub token to use to create PRs, it should be another token than the default GITHUB_TOKEN in order to let the
+      bot-auto-merge workflow approve and merge the created PRs.
+    required: true
+  mvn-repo-username:
+    description: Maven repository username
+    required: true
+  mvn-repo-password:
+    description: Maven repository password
+    required: true
+  base-branch:
+    description: Base branch to check
+    required: false
+    default: "2023"
+  java-version:
+    description: the desired Java version
+    default: "17"
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        repository: '${{ github.repository }}'
+        ref: ${{ inputs.base-branch }}
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: Setup Maven Build
+      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@7398a98d9cc4c317e9d1d08101fb63b5cd895c4f # v0.3.0
+      with:
+        java-version: ${{ inputs.java-version }}
+
+    - name: Retrieve Nuxeo Parent Major version
+      shell: bash
+      run: |
+        BASE_BRANCH="${{ inputs.base-branch }}"
+        MAJOR_VERSION=${BASE_BRANCH#lts-}
+        echo "MAJOR_VERSION=$MAJOR_VERSION" >> $GITHUB_ENV
+
+    - name: Retrieve Repository Name
+      shell: bash
+      run: |
+        FULL_REPOSITORY_NAME="${{ github.repository }}"
+        REPOSITORY_NAME=${FULL_REPOSITORY_NAME#*/}
+        echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_ENV
+
+    - name: Install Updatecli
+      uses: Alfresco/alfresco-build-tools/.github/actions/setup-updatecli@ffc4f9974da0c6fe311fb66e119547a2e8c126c8 #v12.0.0
+      with:
+        # bug in version 0.112.0, see github.com/updatecli/updatecli/pull/7223
+        version: '0.111.0'
+
+    - name: Run Updatecli
+      env:
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+        NUXEO_PARENT_MAJOR_VERSION: ${{ env.MAJOR_VERSION }}
+        MVN_REPO_USERNAME: ${{ env.MVN_REPO_USERNAME || inputs.mvn-repo-username }}
+        MVN_REPO_PASSWORD: ${{ env.MVN_REPO_PASSWORD || inputs.mvn-repo-password }}
+        UPDATECLI_GITHUB_BRANCH: "${{ inputs.base-branch }}"
+        UPDATECLI_GITHUB_TOKEN: "${{ inputs.github-token }}"
+        UPDATECLI_GITHUB_USERNAME: "${{ inputs.github-actor }}"
+      shell: bash
+      run: updatecli --config ${{ github.action_path }}/updatecli.d apply
