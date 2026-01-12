@@ -1,0 +1,35 @@
+---
+name: "Update nuxeo-parent in ROOT pom.xml"
+
+autodiscovery:
+  scmid: github
+  actionid: pr
+  crawlers:
+    maven:
+      only:
+        - groupIds:
+            - org.nuxeo
+          artifactIds:
+            nuxeo-parent: ""
+      versionfilter:
+        kind: regex
+        pattern: '^{{ requiredEnv "NUXEO_PARENT_MAJOR_VERSION" }}.\d+$'
+
+actions:
+  pr:
+    kind: github/pullrequest
+    scmid: github
+    spec:
+      title: 'Update Nuxeo Parent ({{ requiredEnv "UPDATECLI_GITHUB_BRANCH" }})'
+
+scms:
+  github:
+    kind: "github"
+    spec:
+      user: "nuxeo-platform-jx-bot"
+      email: "platform+jx-bot@nuxeo.com"
+      owner: "nuxeo"
+      repository: '{{ requiredEnv "REPOSITORY_NAME" }}'
+      branch: '{{ requiredEnv "UPDATECLI_GITHUB_BRANCH" }}'
+      token: '{{ requiredEnv "UPDATECLI_GITHUB_TOKEN" }}'
+      username: '{{ requiredEnv "UPDATECLI_GITHUB_USERNAME" }}'
