@@ -85,5 +85,5 @@ runs:
           echo "$ADDITIONAL_PROPS" >> "$PROPERTY_FILE"
         fi
 
-        echo "Successfully created: $PROPERTY_FILE"
+        echo "Successfully created '$PROPERTY_FILE' with contents:"
         cat "$PROPERTY_FILE"
