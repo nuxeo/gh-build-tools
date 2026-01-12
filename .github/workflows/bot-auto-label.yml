@@ -1,0 +1,41 @@
+name: Bot auto-label
+on: pull_request
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@dc132f8d6beee699f469b7c03c41631ec61c9c82 # v2.5.0
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Compute release label
+        id: compute-label
+        run: |
+          case "${{ steps.metadata.outputs.update-type }}" in
+            version-update:semver-minor)
+              echo "LABEL=release/minor" >> "$GITHUB_OUTPUT"
+              ;;
+            version-update:semver-patch)
+              echo "LABEL=release/patch" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Ignoring auto-labeling for update type: ${{ steps.metadata.outputs.update-type }}"
+              echo "LABEL=" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Auto label dependabot PRs
+        if: steps.compute-label.outputs.LABEL != ''
+        uses: actions-ecosystem/action-add-labels@bd52874380e3909a1ac983768df6976535ece7f8 # v1.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            ${{ steps.compute-label.outputs.LABEL }}
