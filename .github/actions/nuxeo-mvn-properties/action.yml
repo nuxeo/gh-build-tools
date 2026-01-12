@@ -86,3 +86,4 @@ runs:
         fi
 
         echo "Successfully created: $PROPERTY_FILE"
+        cat "$PROPERTY_FILE"
