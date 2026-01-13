@@ -3,7 +3,9 @@ updates:
   # Default branch: main
   # GitHub Actions version updates
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "daily"
     groups:
