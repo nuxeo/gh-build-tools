@@ -1,6 +1,7 @@
 # gh-build-tools
 
-This repository contains shared/reusable CI configurations for GitHub Actions to serve the repositories of the Nuxeo org but virtually usable by everyone.
+This repository contains shared/reusable CI configurations for GitHub Actions to
+serve the repositories of the Nuxeo org but virtually usable by everyone.
 
 Here follows the list of GitHub Actions topics available in the current document:
 
@@ -8,6 +9,7 @@ Here follows the list of GitHub Actions topics available in the current document
   - [GitHub Actions](#github-actions)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
     - [nuxeo-mvn-properties](#nuxeo-mvn-properties)
+    - [setup-maven-build](#setup-maven-build)
     - [update-nuxeo-parent](#update-nuxeo-parent)
   - [Release](#release)
 
@@ -18,7 +20,8 @@ Here follows the list of GitHub Actions topics available in the current document
 Install nuxeo workloads using helmfile. Port forward discovered services to
 localhost.
 
-Example usage (in below example, we need a kind config file with additional node label):
+Example usage (in below example, we need a kind config file with additional node
+label):
 
 ```yaml
       - name: Setup cluster
@@ -74,6 +77,22 @@ Example usage:
           additional-properties: |
             nuxeo.test.custom.property1=value1
             nuxeo.test.custom.property2=value2
+```
+
+For the list of all available inputs, check `action.yml` file.
+
+### setup-maven-build
+
+Performs the setup of required build tools (eg.: Maven, Java)
+
+Example usage:
+
+```yaml
+      - name: Setup Maven build
+        uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@v0.7.1
+        with:
+          java-version: '17'
+          java-distribution: 'temurin'
 ```
 
 For the list of all available inputs, check `action.yml` file.
