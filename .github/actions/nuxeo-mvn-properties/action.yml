@@ -49,7 +49,7 @@ runs:
         ADDITIONAL_PROPS: ${{ inputs.additional-properties }}
       run: |
         PROPERTY_FILE="${{ inputs.path }}/nuxeo-test-${{ inputs.environment }}.properties"
-        
+
         echo "# Generated Nuxeo Properties - $(date)" > "$PROPERTY_FILE"
 
         add_prop() {

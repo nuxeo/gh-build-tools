@@ -67,7 +67,7 @@ runs:
           jq -c 'reduce .items[] as $item ({}; . + {($item.metadata.name): $item.spec.ports[0].port})')
         echo "Discovered services: $SERVICES_JSON"
         echo "map=$SERVICES_JSON" >> $GITHUB_OUTPUT
-        
+
     - name: Port forward discovered services
       shell: bash
       env:
