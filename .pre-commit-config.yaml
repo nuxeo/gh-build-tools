@@ -15,28 +15,27 @@ repos:
       - id: trailing-whitespace
         exclude: '.*/dist/.*'
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: 0.35.0
+    rev: 0.36.2
     hooks:
       - id: check-dependabot
       - id: check-github-actions
       - id: check-github-workflows
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.46.0
+    rev: v0.47.0
     hooks:
     - id: markdownlint
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.9
+    rev: v1.7.11
     hooks:
       - id: actionlint
   - repo: https://github.com/hyland/github-actions-ensure-sha-pinned-actions
-    rev: v1.1.0
+    rev: v1.2.0
     hooks:
       - id: gha-sha-convert
         args: [--allowlist, 'nuxeo/gh-build-tools/*']
-  - repo: local
+  - repo: https://github.com/Alfresco/alfresco-build-tools
+    rev: 995899721f71ab3ea7b3d044b09cea74124223aa
     hooks:
       - id: check-readme
-        name: Check README entries
-        language: system
-        entry: ./check_readme.sh
+        args: ["--readme-file", "README.md"]
         pass_filenames: false
