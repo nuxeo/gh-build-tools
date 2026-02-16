@@ -34,7 +34,7 @@ repos:
       - id: gha-sha-convert
         args: [--allowlist, 'nuxeo/gh-build-tools/*']
   - repo: https://github.com/Alfresco/alfresco-build-tools
-    rev: 995899721f71ab3ea7b3d044b09cea74124223aa
+    rev: aba8503d31ebb66f2212c4088d4291a8bdfe67a3
     hooks:
       - id: check-readme
         args: ["--readme-file", "README.md"]
