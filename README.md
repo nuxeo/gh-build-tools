@@ -38,7 +38,7 @@ Check `action.yml` for the full list of inputs and their description.
 Outputs:
 
 - package-url: URL of the published package on NOS Marketplace
-- status: publication status (based either on publish step outcome of verification step outcome)
+- publishing-status: publication status (based either on publish step outcome of verification step outcome)
 
 ### nuxeo-docker-build
 
