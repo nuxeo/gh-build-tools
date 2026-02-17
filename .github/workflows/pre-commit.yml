@@ -23,11 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: Alfresco/alfresco-build-tools/.github/actions/github-https-auth@v14.1.0
+      - uses: Alfresco/alfresco-build-tools/.github/actions/github-https-auth@v14.1.1
         with:
           username: ${{ vars.PLATFORM_BOT_USERNAME }}
           pat: ${{ secrets.PLATFORM_BOT_TOKEN }}
 
-      - uses: Alfresco/alfresco-build-tools/.github/actions/pre-commit@v14.1.0
+      - uses: Alfresco/alfresco-build-tools/.github/actions/pre-commit@v14.1.1
         with:
           auto-commit: "true"
