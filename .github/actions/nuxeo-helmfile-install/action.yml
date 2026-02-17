@@ -42,14 +42,14 @@ runs:
   using: composite
   steps:
     - name: Login to registry with nuxeo image
-      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
       with:
         registry: ${{ inputs.docker-registry }}
         username: ${{ inputs.docker-registry-username || github.actor }}
         password: ${{ inputs.docker-registry-password }}
 
     - name: Install helmfile
-      uses: helmfile/helmfile-action@f64d5db9f8660aae0205b5fcfc56577d44acefab # 2.1.0
+      uses: helmfile/helmfile-action@6867d18430fbe251b9c1a498e26b6c45fe6ed9db # 2.2.0
       env:
         GITHUB_USER: ${{ inputs.github-username }}
         GITHUB_PASSWORD: ${{ inputs.github-token }}
