@@ -7,6 +7,8 @@ Here follows the list of GitHub Actions topics available in the current document
 
 - [gh-build-tools](#gh-build-tools)
   - [GitHub Actions](#github-actions)
+    - [nos-publish](#nos-publish)
+    - [nuxeo-docker-build](#nuxeo-docker-build)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
     - [nuxeo-mvn-properties](#nuxeo-mvn-properties)
     - [setup-maven-build](#setup-maven-build)
@@ -14,6 +16,119 @@ Here follows the list of GitHub Actions topics available in the current document
   - [Release](#release)
 
 ## GitHub Actions
+
+### nos-publish
+
+Publish Nuxeo package to Nuxeo Online Services (NOS).
+
+```yaml
+      - uses: nuxeo/gh-build-tools/.github/actions/nos-publish@v0.8.0
+        with:
+          nos-env: production # Market place target env (either 'production' or 'staging')
+          nos-username: ${{ secrets.NOS_CONNECT_USERNAME }}
+          nos-token: ${{ secrets.NOS_CONNECT_TOKEN }}
+          skip-verify: 'false' # optional, default is 'false'
+          package-path: ./module.zip
+```
+
+Inputs:
+
+Check `action.yml` for the full list of inputs and their description.
+
+Outputs:
+
+- package-url: URL of the published package on NOS Marketplace
+- publishing-status: publication status (based either on publish step outcome of verification step outcome)
+
+### nuxeo-docker-build
+
+Build a customized Nuxeo Docker image by layering:
+
+- A chosen base image tag
+- Online Nuxeo Connect marketplace modules (requires `NUXEO_CLID` secret)
+- Offline local addon `.zip`/`.jar` files
+- Optional OS packages installed through the private yum repository
+
+Pushes the resulting image to a target registry (default `ghcr.io`) and outputs the full image URL.
+
+```yaml
+      - name: Build Nuxeo image
+        uses: nuxeo/gh-build-tools/.github/actions/nuxeo-docker-build@v0.8.0
+        with:
+          base-image-tag: 2023
+          base-registry-username: ${{ secrets.NUXEO_REGISTRY_USERNAME }}
+          base-registry-password: ${{ secrets.NUXEO_REGISTRY_PASSWORD }}
+          nuxeo-connect-modules: "nuxeo-web-ui nuxeo-drive" # optional
+          nuxeo-clid: ${{ secrets.NUXEO_CLID }} # optional if nuxeo-connect-modules is empty
+          nuxeo-local-modules-path: addons # directory with offline addon zips
+          os-packages: "ImageMagick jq" # optional
+          image-name: my-nuxeo-custom
+          image-tag: ${{ github.sha }}
+          registry: ghcr.io
+          registry-username: ${{ secrets.GITHUB_USERNAME }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Example with local action registry:
+
+```yaml
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:3
+        ports:
+          - 5000:5000
+    steps:
+      - name: Build base docker image
+        uses: nuxeo/gh-build-tools/.github/actions/nuxeo-docker-build@v0.8.0
+        with:
+          buildx-driver-opts: network=host # to access local registry
+          base-image-tag: ${{ env.NUXEO_VERSION }}
+          base-registry-username: ${{ secrets.NUXEO_DOCKER_USERNAME }}
+          base-registry-password: ${{ secrets.NUXEO_DOCKER_TOKEN }}
+          nuxeo-connect-modules: example-module
+          nuxeo-clid: ${{ secrets.CONNECT_CLID }}
+          os-packages: |
+            ffmpeg-nuxeo
+            ccextractor
+          os-packages-user: ${{ secrets.NUXEO_DOCKER_USERNAME }}
+          os-packages-token: ${{ secrets.NUXEO_DOCKER_TOKEN }}
+          image-name: example-nuxeo
+          image-tag: main
+          image-title: "Nuxeo AI Core"
+          local-registry: true # use local registry service
+          registry: localhost:5000 # local registry address
+          push-image: true
+          platforms: linux/amd64
+```
+
+The image can then be reused in subsequent steps as part of a multi-stage
+Dockerfile build:
+
+```Dockerfile
+FROM localhost:5000/example-nuxeo:main AS nuxeo-base
+```
+
+Inputs:
+
+Check `action.yml` for the full list of inputs and their descriptions.
+
+Outputs:
+
+- The composite action sets output `image-url` to the fully qualified reference.
+
+Notes:
+
+- If no connect modules are provided, that phase is skipped.
+- If the addons directory does not exist it is created empty (offline install skipped).
+- Set `push-image: true` to push the image to the target registry.
+- Provide private yum repo credentials via inputs (`os-packages-user`, `os-packages-token`) if needed (templated by `nuxeo-private.repo`).
 
 ### nuxeo-helmfile-install
 
@@ -69,7 +184,7 @@ Example usage:
 
 ```yaml
       - name: Create project properties file
-        uses: nuxeo/gh-build-tools/.github/actions/nuxeo-mvn-properties@OPSEXP-3626-mvn-properties
+        uses: nuxeo/gh-build-tools/.github/actions/nuxeo-mvn-properties@v0.8.0
         with:
           environment: mongodb # used to name the properties file
           kafka-servers: localhost:9092
