@@ -43,7 +43,7 @@ jobs:
         run: |
           RESPONSE=$(curl \
             -w "%{http_code}" \
-            -su "${{ secrets.CONNECT_PREPROD_USERNAME }}:${{ secrets.CONNECT_PREPROD_CLID }}" \
+            -su "${{ secrets.CONNECT_PREPROD_USERNAME }}:${{ secrets.CONNECT_PREPROD_PASSWORD }}" \
             "${PACKAGE_URL//\?//delete?}")
           if [ "$RESPONSE" != "303" ]; then
             echo "🧟 Failed to unpublish package from NOS Connect. Response code: $RESPONSE"
