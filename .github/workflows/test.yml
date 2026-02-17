@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - '.github/actions/**'
+      - '.github/actions/nos-publish/**'
+      - '.github/actions/nuxeo-docker-build/**'
       - '.github/workflows/test.yml'
   pull_request_review:
     types: [ submitted ]
