@@ -32,7 +32,7 @@ jobs:
         with:
           package-path: .github/actions/nos-publish/${{ env.ZIP_PACKAGE_NAME }}
           nos-username: ${{ secrets.CONNECT_PREPROD_USERNAME }}
-          nos-token: ${{ secrets.CONNECT_PREPROD_CLID }}
+          nos-token: ${{ secrets.CONNECT_PREPROD_PASSWORD }}
           nos-env: staging
           nos-org: nuxeo-devops
 
