@@ -49,7 +49,7 @@ runs:
         password: ${{ inputs.docker-registry-password }}
 
     - name: Install helmfile
-      uses: helmfile/helmfile-action@6867d18430fbe251b9c1a498e26b6c45fe6ed9db # 2.2.0
+      uses: helmfile/helmfile-action@663319a91c7fe08c41ca1a2046d4832d854b0728 # 2.3.0
       env:
         GITHUB_USER: ${{ inputs.github-username }}
         GITHUB_PASSWORD: ${{ inputs.github-token }}
