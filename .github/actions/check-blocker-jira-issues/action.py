@@ -1,10 +1,9 @@
 import os
 import sys
 import re
-from typing import Any, Dict, Optional
+from typing import Dict
 
 from atlassian import Jira
-from requests import HTTPError
 from git import Repo
 
 

@@ -77,22 +77,6 @@ runs:
         python -m pip install --upgrade pip
         python -m pip install -r requirements.txt
 
-    - name: Compute previous release version
-      id: prev_version
-      if: inputs.check-uncommitted == 'true' && inputs.previous-release-version == ''
-      shell: bash
-      run: |
-        VERSION="${{ inputs.release-version }}"
-        MAJOR=$(echo "$VERSION" | cut -d. -f1)
-        MINOR=$(echo "$VERSION" | cut -d. -f2)
-        PATCH=$(echo "$VERSION" | cut -d. -f3)
-        if [ "$MINOR" -gt 0 ]; then
-          PREV="${MAJOR}.$((MINOR - 1)).${PATCH}"
-        else
-          PREV="$((MAJOR - 1)).0.${PATCH}"
-        fi
-        echo "version=$PREV" >> "$GITHUB_OUTPUT"
-
     - name: Run blocker issues check
       id: check
       shell: bash
@@ -108,7 +92,7 @@ runs:
         JIRA_IGNORE_TAG: ${{ inputs.jira-ignore-tag }}
         CHECK_UNCOMMITTED: ${{ inputs.check-uncommitted }}
         BUILD_VERSION: ${{ inputs.build-version }}
-        PREVIOUS_RELEASE_VERSION: ${{ inputs.previous-release-version || steps.prev_version.outputs.version }}
+        PREVIOUS_RELEASE_VERSION: ${{ inputs.previous-release-version }}
       run: python action.py
 
     - name: Generate GitHub summary
