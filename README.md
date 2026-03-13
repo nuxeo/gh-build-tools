@@ -17,6 +17,8 @@ Here follows the list of GitHub Actions topics available in the current document
 
 ## GitHub Actions
 
+### check-blocker-jira-issues
+
 ### nos-publish
 
 Publish Nuxeo package to Nuxeo Online Services (NOS).
