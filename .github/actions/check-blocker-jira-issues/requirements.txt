@@ -1,2 +1,2 @@
-atlassian-python-api==3.41.16
-GitPython==3.1.44
+atlassian-python-api==4.0.7
+GitPython==3.1.46
