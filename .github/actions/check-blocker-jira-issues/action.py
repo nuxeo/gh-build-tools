@@ -95,7 +95,7 @@ def main() -> None:
         f"project = {jira_project}"
         f" AND priority = {jira_priority}"
         f" AND fixVersion in ({fix_versions})"
-        f" AND status NOT IN (Resolved, Closed)"
+        f" AND statusCategory != Done"
     )
 
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
@@ -124,7 +124,7 @@ def main() -> None:
             f"project = {jira_project}"
             f" AND priority = {jira_priority}"
             f" AND fixVersion in ({fix_versions})"
-            f" AND {JIRA_TAGS_FIELD} != {jira_ignore_tag}"
+            f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {jira_ignore_tag})"
         )
         all_blocker_tickets = jira.jql(all_blocker_issue_jql, fields=",".join(fields))
 
