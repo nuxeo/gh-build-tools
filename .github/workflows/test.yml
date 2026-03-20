@@ -109,8 +109,8 @@ jobs:
           jira-project: OPSEXP
           jira-moving-version: _CI_GH_ACTIONS
           check-uncommitted: "true"
-          build-version: "0.9.0"
-          previous-release-version: "0.8.0"
+          build-version: "0.8.0"
+          previous-release-version: "0.7.0"
 
       - name: Assert that uncommitted blocker tickets were detected
         run: |
