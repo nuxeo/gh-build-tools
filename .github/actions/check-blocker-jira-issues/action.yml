@@ -39,13 +39,10 @@ inputs:
   build-version:
     description: The current build version (tag/ref). Required when check-uncommitted is true.
     default: ""
-  release-version:
-    description: The target release version. Required when check-uncommitted is true. Used to compute the previous release version range.
-    default: ""
   previous-release-version:
     description: |
-      Override for the previous release version. When empty, it is derived from release-version
-      by decrementing the minor segment.
+      The previous release version (tag/ref) to compare against when checking for uncommitted issues.
+      Required when check-uncommitted is true.
     default: ""
   repository-url:
     description: Repository URL for context in summary. Defaults to the current repository.
