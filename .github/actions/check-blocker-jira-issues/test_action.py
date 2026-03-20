@@ -1,8 +1,9 @@
 import os
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, patch
 
 from action import (
+    _jql_quote,
     get_required_env,
     get_jira_field_ids,
     get_common_jira_fields,
@@ -108,6 +109,17 @@ class TestGetRequiredEnv:
             get_required_env("MY_VAR")
 
 
+class TestJqlQuote:
+    def test_simple_string(self):
+        assert _jql_quote("Highest") == '"Highest"'
+
+    def test_string_with_dots_and_hyphens(self):
+        assert _jql_quote("NXCON-2023.x") == '"NXCON-2023.x"'
+
+    def test_string_with_embedded_quotes(self):
+        assert _jql_quote('value"with"quotes') == '"value\\"with\\"quotes"'
+
+
 class TestGetJiraFieldIds:
     def test_builds_name_to_id_map(self, mock_jira):
         result = get_jira_field_ids(mock_jira)
@@ -123,8 +135,8 @@ class TestGetCommonJiraFields:
         fields = get_common_jira_fields(mock_jira, "Tags")
         assert fields == ["key", "issuetype", "summary", "customfield_10076"]
 
-    def test_raises_on_unknown_tag_field(self, mock_jira):
-        with pytest.raises(KeyError):
+    def test_exits_on_unknown_tag_field(self, mock_jira):
+        with pytest.raises(SystemExit):
             get_common_jira_fields(mock_jira, "NonExistentField")
 
 
@@ -376,7 +388,7 @@ class TestMainOptionalReleaseVersion:
             # Verify JQL contains only the moving version
             jql_call = jira.jql.call_args[0][0]
             assert "NXP-2023.x" in jql_call
-            assert "fixVersion in (NXP-2023.x)" in jql_call
+            assert 'fixVersion in ("NXP-2023.x")' in jql_call
 
 
 class TestMainWithReleaseVersion:
@@ -400,7 +412,51 @@ class TestMainWithReleaseVersion:
             main()
 
             jql_call = jira.jql.call_args[0][0]
-            assert "fixVersion in (NXP-2023.x, NXP-2023.2)" in jql_call
+            assert 'fixVersion in ("NXP-2023.x", "NXP-2023.2")' in jql_call
+
+
+class TestMainMissingVersionsForUncommitted:
+    """Scenario: check_uncommitted=true but BUILD_VERSION or PREVIOUS_RELEASE_VERSION missing → sys.exit(1)."""
+
+    def test_exits_on_missing_build_version(self, base_env):
+        base_env["CHECK_UNCOMMITTED"] = "true"
+        base_env["BUILD_VERSION"] = ""
+        base_env["PREVIOUS_RELEASE_VERSION"] = "1.0.0"
+
+        with (
+            patch.dict(os.environ, base_env, clear=True),
+            patch("action.Jira") as MockJira,
+            patch("action.Repo") as MockRepo,
+        ):
+            jira = MockJira.return_value
+            jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
+            jira.jql.return_value = _jira_response([])
+
+            repo = MockRepo.return_value
+            repo.working_dir = "/fake/repo"
+
+            with pytest.raises(SystemExit):
+                main()
+
+    def test_exits_on_missing_previous_version(self, base_env):
+        base_env["CHECK_UNCOMMITTED"] = "true"
+        base_env["BUILD_VERSION"] = "2.0.0"
+        base_env["PREVIOUS_RELEASE_VERSION"] = ""
+
+        with (
+            patch.dict(os.environ, base_env, clear=True),
+            patch("action.Jira") as MockJira,
+            patch("action.Repo") as MockRepo,
+        ):
+            jira = MockJira.return_value
+            jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
+            jira.jql.return_value = _jira_response([])
+
+            repo = MockRepo.return_value
+            repo.working_dir = "/fake/repo"
+
+            with pytest.raises(SystemExit):
+                main()
 
 
 class TestMainMissingRequiredEnv:

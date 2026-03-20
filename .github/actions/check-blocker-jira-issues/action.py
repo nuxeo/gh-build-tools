@@ -10,6 +10,11 @@ from requests import HTTPError
 JIRA_TAGS_FIELD = "Tags"
 
 
+def _jql_quote(value: str) -> str:
+    """Quote a string value for use in JQL, escaping embedded quotes."""
+    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
 def get_required_env(var_name: str) -> str:
     value = os.getenv(var_name)
 
@@ -26,11 +31,19 @@ def get_jira_field_ids(jira: Jira) -> dict[str, str]:
 
 def get_common_jira_fields(jira: Jira, tags_field_name: str) -> list[str]:
     field_ids = get_jira_field_ids(jira)
+    tags_id = field_ids.get(tags_field_name)
+    if not tags_id:
+        print(
+            f"❌ Jira field '{tags_field_name}' not found. "
+            f"Available fields: {', '.join(sorted(field_ids.keys()))}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     return [
         "key",
         "issuetype",
         "summary",
-        field_ids[tags_field_name],
+        tags_id,
     ]
 
 
@@ -91,11 +104,11 @@ def main() -> None:
     repo = Repo(repository_path)
     print(f"📂 Using repository at: {repo.working_dir}")
 
-    fix_versions = ", ".join(filter(None, [jira_moving_version, jira_release_version]))
+    fix_versions = ", ".join(_jql_quote(v) for v in [jira_moving_version, jira_release_version] if v)
 
     open_blocker_issue_jql = (
         f"project = {jira_project}"
-        f" AND priority = {jira_priority}"
+        f" AND priority = {_jql_quote(jira_priority)}"
         f" AND fixVersion in ({fix_versions})"
         f" AND statusCategory != Done"
     )
@@ -124,6 +137,13 @@ def main() -> None:
     uncommitted_tickets = []
 
     if check_uncommitted.lower() == "true":
+        if not build_version.strip() or not previous_release_version.strip():
+            print(
+                "❌ BUILD_VERSION and PREVIOUS_RELEASE_VERSION are required when CHECK_UNCOMMITTED is true.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
         committed_ticket_keys = get_committed_ticket_keys(repo, previous_release_version, build_version)
 
         print(f"🔍 Found {len(committed_ticket_keys)} committed ticket keys: {committed_ticket_keys} from {previous_release_version} to {build_version}")
@@ -132,7 +152,7 @@ def main() -> None:
             f"project = {jira_project}"
             f" AND priority = {jira_priority}"
             f" AND fixVersion in ({fix_versions})"
-            f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {jira_ignore_tag})"
+            f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {_jql_quote(jira_ignore_tag)})"
         )
         try:
             all_blocker_tickets = jira.jql(all_blocker_issue_jql, fields=",".join(fields))
