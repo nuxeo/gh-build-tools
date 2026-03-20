@@ -3,8 +3,7 @@ description: |
   Check for unresolved and optionally uncommitted blocker Jira issues before a release.
   Queries Jira for high-priority issues matching the given fixVersion(s) and optionally
   cross-references them against the Git changelog to detect uncommitted fixes.
-  Outputs a Markdown notification message in every case and fails the workflow by default
-  when issues are found.
+  Fails the workflow when blocker issues are found and generates a GitHub summary.
 
 inputs:
   jira-base-url:

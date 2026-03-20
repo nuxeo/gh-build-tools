@@ -1,11 +1,13 @@
 import os
 import sys
 import re
-from typing import Dict
 
 from atlassian import Jira
 from git import Repo
 from git.exc import GitCommandError
+from requests import HTTPError
+
+JIRA_TAGS_FIELD = "Tags"
 
 
 def get_required_env(var_name: str) -> str:
@@ -17,7 +19,8 @@ def get_required_env(var_name: str) -> str:
 
     return value
 
-def get_jira_field_ids(jira: Jira) -> Dict[str, str]:
+
+def get_jira_field_ids(jira: Jira) -> dict[str, str]:
     return {f["name"]: f["id"] for f in jira.get_all_fields()}
 
 
@@ -29,6 +32,7 @@ def get_common_jira_fields(jira: Jira, tags_field_name: str) -> list[str]:
         "summary",
         field_ids[tags_field_name],
     ]
+
 
 def format_ticket_keys(tickets: list[dict]) -> str:
     """Format ticket keys as a comma-separated string."""
@@ -62,15 +66,13 @@ def get_committed_ticket_keys(repo: Repo, previous_version: str, current_version
 
 
 def main() -> None:
-    JIRA_TAGS_FIELD = "Tags"
-
     jira_url = get_required_env("JIRA_URL")
     jira_user = get_required_env("JIRA_USER")
     jira_token = get_required_env("JIRA_TOKEN")
 
     jira_project = get_required_env("JIRA_PROJECT")
     jira_priority = get_required_env("JIRA_PRIORITY")
-    jira_ignore_tag = get_required_env("JIRA_IGNORE_TAG") # set to "grype" on gh action level
+    jira_ignore_tag = get_required_env("JIRA_IGNORE_TAG")
     jira_moving_version = get_required_env("JIRA_MOVING_VERSION")
     jira_release_version = os.getenv("JIRA_RELEASE_VERSION")
 
@@ -100,13 +102,16 @@ def main() -> None:
 
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
-    unresolved_tickets = jira.jql(open_blocker_issue_jql, fields=",".join(fields))
-
-    # print unresolved tickets for debugging
+    try:
+        unresolved_tickets = jira.jql(open_blocker_issue_jql, fields=",".join(fields))
+    except HTTPError as e:
+        print("❌ Jira API error while querying unresolved tickets.", file=sys.stderr)
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
 
     print(f"🔍 Found {len(unresolved_tickets['issues'])} unresolved blocker ticket(s) for fix versions: {fix_versions}")
 
-    uncommitted_tickets = []
+    has_blockers = False
 
     if not unresolved_tickets["issues"]:
         print("✅ No unresolved blocker tickets found.")
@@ -114,6 +119,9 @@ def main() -> None:
         print(f"⚠️ Found {len(unresolved_tickets['issues'])} unresolved blocker ticket(s):")
         for t in unresolved_tickets["issues"]:
             print(f"  - {t['key']}: {t['fields']['summary']}")
+        has_blockers = True
+
+    uncommitted_tickets = []
 
     if check_uncommitted.lower() == "true":
         committed_ticket_keys = get_committed_ticket_keys(repo, previous_release_version, build_version)
@@ -126,7 +134,12 @@ def main() -> None:
             f" AND fixVersion in ({fix_versions})"
             f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {jira_ignore_tag})"
         )
-        all_blocker_tickets = jira.jql(all_blocker_issue_jql, fields=",".join(fields))
+        try:
+            all_blocker_tickets = jira.jql(all_blocker_issue_jql, fields=",".join(fields))
+        except HTTPError as e:
+            print("❌ Jira API error while querying all blocker tickets.", file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            sys.exit(1)
 
         uncommitted_tickets = [
             t for t in all_blocker_tickets["issues"]
@@ -139,16 +152,17 @@ def main() -> None:
             print(f"⚠️ Found {len(uncommitted_tickets)} uncommitted blocker ticket(s):")
             for t in uncommitted_tickets:
                 print(f"  - {t['key']}: {t['fields']['summary']}")
+            has_blockers = True
 
     # Write GitHub outputs
     write_github_output("unresolved_tickets", format_ticket_keys(unresolved_tickets["issues"]))
     write_github_output("uncommitted_tickets", format_ticket_keys(uncommitted_tickets))
-    write_github_output("has_blocker_issues", str(bool(unresolved_tickets["issues"] or uncommitted_tickets)).lower())
+    write_github_output("has_blocker_issues", str(has_blockers).lower())
 
-    if not unresolved_tickets["issues"] and not uncommitted_tickets:
-        print("✅ No blocker issues found.")
-    else:
+    if has_blockers:
         sys.exit(1)
+    else:
+        print("✅ No blocker issues found.")
 
 if __name__ == "__main__":
     main()  # pragma: no cover

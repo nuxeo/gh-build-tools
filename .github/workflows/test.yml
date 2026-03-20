@@ -38,6 +38,7 @@ jobs:
         run: python -m pytest test_action.py -v
 
   check-blocker-jira-issues-integration:
+    needs: check-blocker-jira-issues-unit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -45,7 +46,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: "Integration: detect unresolved blocker tickets"
+      - name: Detect unresolved blocker tickets
         id: detect_blockers
         continue-on-error: true
         uses: ./.github/actions/check-blocker-jira-issues
@@ -57,7 +58,7 @@ jobs:
           jira-moving-version: _CI_GH_ACTIONS
           check-uncommitted: "false"
 
-      - name: "Assert: blocker tickets were detected"
+      - name: Assert that blocker tickets were detected
         run: |
           if [ "${{ steps.detect_blockers.outcome }}" != "failure" ]; then
             echo "❌ Expected step to fail (unresolved blockers exist), but it passed."
@@ -73,8 +74,7 @@ jobs:
           fi
           echo "✅ Blocker tickets detected correctly: ${{ steps.detect_blockers.outputs.unresolved-tickets }}"
 
-      # Scenario 2: No blocker tickets for a non-existent version (should pass)
-      - name: "Integration: no blocker tickets for clean version"
+      - name: No blocker tickets for clean version
         id: clean_check
         uses: ./.github/actions/check-blocker-jira-issues
         with:
@@ -85,7 +85,7 @@ jobs:
           jira-moving-version: "nonexistent-version-xyz-999"
           check-uncommitted: "false"
 
-      - name: "Assert: no blocker tickets found"
+      - name: Assert that no blocker tickets were found for clean version
         run: |
           if [ "${{ steps.clean_check.outputs.has-blocker-issues }}" != "false" ]; then
             echo "❌ Expected has-blocker-issues=false for non-existent version"
@@ -97,8 +97,8 @@ jobs:
           fi
           echo "✅ Clean check passed correctly"
 
-      # Scenario 3: Detect uncommitted blocker tickets (resolved but not in git log)
-      - name: "Integration: detect uncommitted blocker tickets"
+      # NOTE: uses tag range v0.8.0..v0.9.0 from this repo; assumes no OPSEXP ticket keys in those commits
+      - name: Detect uncommitted blocker tickets
         id: detect_uncommitted
         continue-on-error: true
         uses: ./.github/actions/check-blocker-jira-issues
@@ -112,7 +112,7 @@ jobs:
           build-version: "0.9.0"
           previous-release-version: "0.8.0"
 
-      - name: "Assert: uncommitted blocker tickets were detected"
+      - name: Assert that uncommitted blocker tickets were detected
         run: |
           if [ "${{ steps.detect_uncommitted.outcome }}" != "failure" ]; then
             echo "❌ Expected step to fail (uncommitted blockers exist), but it passed."
