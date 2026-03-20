@@ -415,6 +415,40 @@ class TestMainWithReleaseVersion:
             assert 'fixVersion in ("NXP-2023.x", "NXP-2023.2")' in jql_call
 
 
+class TestMainUncommittedJqlContent:
+    """Verify the second JQL query (resolved blockers for uncommitted check) restricts to Done."""
+
+    def test_second_jql_filters_done_tickets_only(self, base_env):
+        base_env["CHECK_UNCOMMITTED"] = "true"
+        base_env["BUILD_VERSION"] = "2023.2.0"
+        base_env["PREVIOUS_RELEASE_VERSION"] = "2023.1.0"
+
+        with (
+            patch.dict(os.environ, base_env, clear=True),
+            patch("action.Jira") as MockJira,
+            patch("action.Repo") as MockRepo,
+        ):
+            jira = MockJira.return_value
+            jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
+            jira.jql.side_effect = [
+                _jira_response([]),
+                _jira_response([]),
+            ]
+
+            repo = MockRepo.return_value
+            repo.working_dir = "/fake/repo"
+            repo.git.log.return_value = ""
+
+            main()
+
+            # Second call is the resolved-blockers query
+            second_jql = jira.jql.call_args_list[1][0][0]
+            assert "statusCategory = Done" in second_jql
+            assert 'priority = "Highest"' in second_jql
+            assert 'fixVersion in ("NXP-2023.x")' in second_jql
+            assert 'Tags is EMPTY OR Tags != "grype"' in second_jql
+
+
 class TestMainMissingVersionsForUncommitted:
     """Scenario: check_uncommitted=true but BUILD_VERSION or PREVIOUS_RELEASE_VERSION missing → sys.exit(1)."""
 
