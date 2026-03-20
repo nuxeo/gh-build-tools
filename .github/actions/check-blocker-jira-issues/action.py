@@ -150,7 +150,7 @@ def main() -> None:
 
         all_blocker_issue_jql = (
             f"project = {jira_project}"
-            f" AND priority = {jira_priority}"
+            f" AND priority = {_jql_quote(jira_priority)}"
             f" AND fixVersion in ({fix_versions})"
             f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {_jql_quote(jira_ignore_tag)})"
         )
