@@ -5,6 +5,7 @@ from typing import Dict
 
 from atlassian import Jira
 from git import Repo
+from git.exc import GitCommandError
 
 
 def get_required_env(var_name: str) -> str:
@@ -48,7 +49,13 @@ def write_github_output(key: str, value: str) -> None:
 def get_committed_ticket_keys(repo: Repo, previous_version: str, current_version: str, tag_prefix: str = "v") -> set[str]:
     """Get Jira ticket keys mentioned in commits between two tags."""
     range_spec = f"{tag_prefix}{previous_version}..{tag_prefix}{current_version}"
-    commits = repo.git.log("--oneline", range_spec)
+    try:
+        commits = repo.git.log("--oneline", range_spec)
+    except GitCommandError as e:
+        print(f"❌ Git log failed for range '{range_spec}' in repo '{repo.working_dir}'", file=sys.stderr)
+        print(f"   Ensure the repository is checked out with fetch-depth: 0 (full history with tags).", file=sys.stderr)
+        print(f"   Available tags: {repo.git.tag('-l')}", file=sys.stderr)
+        raise
 
     # Extract Jira ticket keys (e.g. NXP-12345) from commit messages
     return set(re.findall(r"[A-Z][A-Z0-9]+-\d+", commits))
@@ -80,6 +87,7 @@ def main() -> None:
     )
 
     repo = Repo(repository_path)
+    print(f"📂 Using repository at: {repo.working_dir}")
 
     fix_versions = ", ".join(filter(None, [jira_moving_version, jira_release_version]))
 
@@ -93,6 +101,10 @@ def main() -> None:
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
     unresolved_tickets = jira.jql(open_blocker_issue_jql, fields=",".join(fields))
+
+    # print unresolved tickets for debugging
+
+    print(f"🔍 Found {len(unresolved_tickets['issues'])} unresolved blocker ticket(s) for fix versions: {fix_versions}")
 
     uncommitted_tickets = []
 
