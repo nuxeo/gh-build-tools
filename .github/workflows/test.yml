@@ -37,6 +37,97 @@ jobs:
       - name: Run unit tests
         run: python -m pytest test_action.py -v
 
+  check-blocker-jira-issues-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: "Integration: detect unresolved blocker tickets"
+        id: detect_blockers
+        continue-on-error: true
+        uses: ./.github/actions/check-blocker-jira-issues
+        with:
+          jira-base-url: https://hyland.atlassian.net
+          jira-username: ${{ secrets.JIRA_USER }}
+          jira-password: ${{ secrets.JIRA_API_TOKEN }}
+          jira-project: OPSEXP
+          jira-moving-version: _CI_GH_ACTIONS
+          check-uncommitted: "false"
+
+      - name: "Assert: blocker tickets were detected"
+        run: |
+          if [ "${{ steps.detect_blockers.outcome }}" != "failure" ]; then
+            echo "❌ Expected step to fail (unresolved blockers exist), but it passed."
+            exit 1
+          fi
+          if [ "${{ steps.detect_blockers.outputs.has-blocker-issues }}" != "true" ]; then
+            echo "❌ Expected has-blocker-issues=true"
+            exit 1
+          fi
+          if [ -z "${{ steps.detect_blockers.outputs.unresolved-tickets }}" ]; then
+            echo "❌ Expected unresolved-tickets to be non-empty"
+            exit 1
+          fi
+          echo "✅ Blocker tickets detected correctly: ${{ steps.detect_blockers.outputs.unresolved-tickets }}"
+
+      # Scenario 2: No blocker tickets for a non-existent version (should pass)
+      - name: "Integration: no blocker tickets for clean version"
+        id: clean_check
+        uses: ./.github/actions/check-blocker-jira-issues
+        with:
+          jira-base-url: https://hyland.atlassian.net
+          jira-username: ${{ secrets.JIRA_USER }}
+          jira-password: ${{ secrets.JIRA_API_TOKEN }}
+          jira-project: OPSEXP
+          jira-moving-version: "nonexistent-version-xyz-999"
+          check-uncommitted: "false"
+
+      - name: "Assert: no blocker tickets found"
+        run: |
+          if [ "${{ steps.clean_check.outputs.has-blocker-issues }}" != "false" ]; then
+            echo "❌ Expected has-blocker-issues=false for non-existent version"
+            exit 1
+          fi
+          if [ -n "${{ steps.clean_check.outputs.unresolved-tickets }}" ]; then
+            echo "❌ Expected unresolved-tickets to be empty"
+            exit 1
+          fi
+          echo "✅ Clean check passed correctly"
+
+      # Scenario 3: Detect uncommitted blocker tickets (resolved but not in git log)
+      - name: "Integration: detect uncommitted blocker tickets"
+        id: detect_uncommitted
+        continue-on-error: true
+        uses: ./.github/actions/check-blocker-jira-issues
+        with:
+          jira-base-url: https://hyland.atlassian.net
+          jira-username: ${{ secrets.JIRA_USER }}
+          jira-password: ${{ secrets.JIRA_API_TOKEN }}
+          jira-project: OPSEXP
+          jira-moving-version: _CI_GH_ACTIONS
+          check-uncommitted: "true"
+          build-version: "0.9.0"
+          previous-release-version: "0.8.0"
+
+      - name: "Assert: uncommitted blocker tickets were detected"
+        run: |
+          if [ "${{ steps.detect_uncommitted.outcome }}" != "failure" ]; then
+            echo "❌ Expected step to fail (uncommitted blockers exist), but it passed."
+            exit 1
+          fi
+          if [ "${{ steps.detect_uncommitted.outputs.has-blocker-issues }}" != "true" ]; then
+            echo "❌ Expected has-blocker-issues=true"
+            exit 1
+          fi
+          if [ -z "${{ steps.detect_uncommitted.outputs.uncommitted-tickets }}" ]; then
+            echo "❌ Expected uncommitted-tickets to be non-empty"
+            exit 1
+          fi
+          echo "✅ Uncommitted blocker tickets detected correctly: ${{ steps.detect_uncommitted.outputs.uncommitted-tickets }}"
+
   nos-publish:
     if: >-
       (github.event.review.state == 'approved' && contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.event.pull_request.user.login)) ||

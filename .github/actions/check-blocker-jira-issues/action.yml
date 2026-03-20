@@ -44,9 +44,6 @@ inputs:
       The previous release version (tag/ref) to compare against when checking for uncommitted issues.
       Required when check-uncommitted is true.
     default: ""
-  repository-url:
-    description: Repository URL for context in summary. Defaults to the current repository.
-    default: ""
 
 outputs:
   has-blocker-issues:
