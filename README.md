@@ -7,6 +7,7 @@ Here follows the list of GitHub Actions topics available in the current document
 
 - [gh-build-tools](#gh-build-tools)
   - [GitHub Actions](#github-actions)
+    - [check-blocker-jira-issues](#check-blocker-jira-issues)
     - [nos-publish](#nos-publish)
     - [nuxeo-docker-build](#nuxeo-docker-build)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
@@ -18,6 +19,35 @@ Here follows the list of GitHub Actions topics available in the current document
 ## GitHub Actions
 
 ### check-blocker-jira-issues
+
+Check for unresolved and optionally uncommitted blocker Jira issues before a release. Fails the workflow when issues are found.
+
+```yaml
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # required for uncommitted check
+
+      - uses: nuxeo/gh-build-tools/.github/actions/check-blocker-jira-issues@v0.9.0
+        with:
+          jira-base-url: https://hyland.atlassian.net
+          jira-username: ${{ secrets.JIRA_USER }}
+          jira-password: ${{ secrets.JIRA_API_TOKEN }}
+          jira-project: NXCON
+          jira-moving-version: "NXCON-2023.x"
+          check-uncommitted: "true"
+          build-version: "2023.2.0"
+          previous-release-version: "2023.1.0"
+```
+
+Inputs:
+
+Check `action.yml` for the full list of inputs and their description.
+
+Outputs:
+
+- `has-blocker-issues`: `"true"` if any issues were found, `"false"` otherwise
+- `unresolved-tickets`: comma-separated Jira ticket keys of unresolved blocker issues
+- `uncommitted-tickets`: comma-separated Jira ticket keys of uncommitted blocker issues
 
 ### nos-publish
 
