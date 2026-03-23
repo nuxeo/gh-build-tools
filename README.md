@@ -25,7 +25,7 @@ Check for unresolved and optionally uncommitted blocker Jira issues before a rel
 ```yaml
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # required for uncommitted check
+          fetch-depth: 0 # required when check-uncommitted is enabled
 
       - uses: nuxeo/gh-build-tools/.github/actions/check-blocker-jira-issues@v0.9.0
         with:
@@ -34,9 +34,10 @@ Check for unresolved and optionally uncommitted blocker Jira issues before a rel
           jira-password: ${{ secrets.JIRA_API_TOKEN }}
           jira-project: NXCON
           jira-moving-version: "NXCON-2023.x"
-          check-uncommitted: "true"
-          build-version: "2023.2.0"
-          previous-release-version: "2023.1.0"
+          ## optional check for uncommitted jira issues
+          # check-uncommitted: "true"
+          # build-version: "2023.2.0"
+          # previous-release-version: "2023.1.0"
 ```
 
 Inputs:
