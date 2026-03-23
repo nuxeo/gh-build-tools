@@ -20,7 +20,11 @@ Here follows the list of GitHub Actions topics available in the current document
 
 ### check-blocker-jira-issues
 
-Check for unresolved and optionally uncommitted blocker Jira issues before a release. Fails the workflow when issues are found.
+Check for unresolved and optionally uncommitted blocker Jira issues before a
+release. Fails the workflow when issues are found.
+
+See the [action README](.github/actions/check-blocker-jira-issues/README.md) for
+a detailed step-by-step description of what the action does.
 
 ```yaml
       - uses: actions/checkout@v4
