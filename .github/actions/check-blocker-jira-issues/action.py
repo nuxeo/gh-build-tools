@@ -113,6 +113,19 @@ def main() -> None:
 
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
+    # Debug: test with simplest possible query first
+    try:
+        debug_simple = jira.enhanced_jql(f"project = {jira_project}", fields=["key"], limit=3)
+        print(f"🔎 DEBUG simple query (project only): {debug_simple}")
+    except Exception as e:
+        print(f"🔎 DEBUG simple query FAILED: {e}")
+
+    try:
+        debug_fv = jira.enhanced_jql(f"project = {jira_project} AND fixVersion in ({fix_versions})", fields=["key"], limit=3)
+        print(f"🔎 DEBUG fixVersion query: {debug_fv}")
+    except Exception as e:
+        print(f"🔎 DEBUG fixVersion query FAILED: {e}")
+
     print(f"🔎 DEBUG JQL (unresolved): {open_blocker_issue_jql}")
     print(f"🔎 DEBUG fields: {fields}")
 
