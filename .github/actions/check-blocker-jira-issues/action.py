@@ -113,7 +113,7 @@ def main() -> None:
     fields, tags_id = get_common_jira_fields(jira, jira_tags_field)
 
     try:
-        unresolved_tickets = jira.jql(open_blocker_issue_jql, fields=",".join(fields))
+        unresolved_tickets = jira.enhanced_jql(open_blocker_issue_jql, fields=fields)
     except HTTPError as e:
         print("❌ Jira API error while querying unresolved tickets.", file=sys.stderr)
         print(str(e), file=sys.stderr)
@@ -157,7 +157,7 @@ def main() -> None:
             f"{tags_filter}"
         )
         try:
-            all_blocker_tickets = jira.jql(all_blocker_issue_jql, fields=",".join(fields))
+            all_blocker_tickets = jira.enhanced_jql(all_blocker_issue_jql, fields=fields)
         except HTTPError as e:
             print("❌ Jira API error while querying all blocker tickets.", file=sys.stderr)
             print(str(e), file=sys.stderr)

@@ -213,7 +213,7 @@ class TestMainNoUnresolvedNoUncommitted:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.return_value = _jira_response([])
+            jira.enhanced_jql.return_value = _jira_response([])
 
             repo = MockRepo.return_value
             repo.working_dir = "/fake/repo"
@@ -237,7 +237,7 @@ class TestMainUnresolvedTicketsFound:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.return_value = _jira_response([
+            jira.enhanced_jql.return_value = _jira_response([
                 _make_ticket("NXP-101", "Blocker bug"),
                 _make_ticket("NXP-102", "Another blocker"),
             ])
@@ -272,7 +272,7 @@ class TestMainUncommittedTicketsFound:
 
             # First call: unresolved query → no issues
             # Second call: all blockers query → 2 tickets, only 1 is committed
-            jira.jql.side_effect = [
+            jira.enhanced_jql.side_effect = [
                 _jira_response([]),
                 _jira_response([
                     _make_ticket("NXP-200", "Committed fix"),
@@ -310,7 +310,7 @@ class TestMainAllTicketsCommitted:
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
 
-            jira.jql.side_effect = [
+            jira.enhanced_jql.side_effect = [
                 _jira_response([]),
                 _jira_response([
                     _make_ticket("NXP-300"),
@@ -348,7 +348,7 @@ class TestMainBothUnresolvedAndUncommitted:
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
 
-            jira.jql.side_effect = [
+            jira.enhanced_jql.side_effect = [
                 _jira_response([_make_ticket("NXP-400", "Open blocker")]),
                 _jira_response([_make_ticket("NXP-401", "Uncommitted blocker")]),
             ]
@@ -381,7 +381,7 @@ class TestMainOptionalReleaseVersion:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.return_value = _jira_response([])
+            jira.enhanced_jql.return_value = _jira_response([])
 
             repo = MockRepo.return_value
             repo.working_dir = "/fake/repo"
@@ -389,7 +389,7 @@ class TestMainOptionalReleaseVersion:
             main()
 
             # Verify JQL contains only the moving version
-            jql_call = jira.jql.call_args[0][0]
+            jql_call = jira.enhanced_jql.call_args[0][0]
             assert "NXP-2023.x" in jql_call
             assert 'fixVersion in ("NXP-2023.x")' in jql_call
 
@@ -407,14 +407,14 @@ class TestMainWithReleaseVersion:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.return_value = _jira_response([])
+            jira.enhanced_jql.return_value = _jira_response([])
 
             repo = MockRepo.return_value
             repo.working_dir = "/fake/repo"
 
             main()
 
-            jql_call = jira.jql.call_args[0][0]
+            jql_call = jira.enhanced_jql.call_args[0][0]
             assert 'fixVersion in ("NXP-2023.x", "NXP-2023.2")' in jql_call
 
 
@@ -433,7 +433,7 @@ class TestMainUncommittedJqlContent:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.side_effect = [
+            jira.enhanced_jql.side_effect = [
                 _jira_response([]),
                 _jira_response([]),
             ]
@@ -445,7 +445,7 @@ class TestMainUncommittedJqlContent:
             main()
 
             # Second call is the resolved-blockers query
-            second_jql = jira.jql.call_args_list[1][0][0]
+            second_jql = jira.enhanced_jql.call_args_list[1][0][0]
             assert "statusCategory = Done" in second_jql
             assert 'priority = "Highest"' in second_jql
             assert 'fixVersion in ("NXP-2023.x")' in second_jql
@@ -467,7 +467,7 @@ class TestMainMissingVersionsForUncommitted:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.return_value = _jira_response([])
+            jira.enhanced_jql.return_value = _jira_response([])
 
             repo = MockRepo.return_value
             repo.working_dir = "/fake/repo"
@@ -487,7 +487,7 @@ class TestMainMissingVersionsForUncommitted:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_RESPONSE
-            jira.jql.return_value = _jira_response([])
+            jira.enhanced_jql.return_value = _jira_response([])
 
             repo = MockRepo.return_value
             repo.working_dir = "/fake/repo"
@@ -533,7 +533,7 @@ class TestMainTagsFieldMissing:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_NO_TAGS
-            jira.jql.return_value = _jira_response([])
+            jira.enhanced_jql.return_value = _jira_response([])
 
             repo = MockRepo.return_value
             repo.working_dir = "/fake/repo"
@@ -555,7 +555,7 @@ class TestMainTagsFieldMissing:
         ):
             jira = MockJira.return_value
             jira.get_all_fields.return_value = JIRA_FIELDS_NO_TAGS
-            jira.jql.side_effect = [
+            jira.enhanced_jql.side_effect = [
                 _jira_response([]),
                 _jira_response([]),
             ]
@@ -566,6 +566,6 @@ class TestMainTagsFieldMissing:
 
             main()
 
-            second_jql = jira.jql.call_args_list[1][0][0]
+            second_jql = jira.enhanced_jql.call_args_list[1][0][0]
             assert "statusCategory = Done" in second_jql
             assert "Tags" not in second_jql
