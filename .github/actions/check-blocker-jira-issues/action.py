@@ -115,12 +115,17 @@ def main() -> None:
 
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
+    print(f"🔎 JQL (unresolved): {open_blocker_issue_jql}")
+    print(f"🔎 Requested fields: {fields}")
+
     try:
         unresolved_tickets = jira.enhanced_jql(open_blocker_issue_jql, fields=fields)
     except HTTPError as e:
         print("❌ Jira API error while querying unresolved tickets.", file=sys.stderr)
         print(str(e), file=sys.stderr)
         sys.exit(1)
+
+    print(f"🔎 Raw response (unresolved): {unresolved_tickets}")
 
     print(f"🔍 Found {len(unresolved_tickets['issues'])} unresolved blocker ticket(s) for fix versions: {fix_versions}")
 
@@ -155,12 +160,16 @@ def main() -> None:
             f" AND statusCategory = Done"
             f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {_jql_quote(jira_ignore_tag)})"
         )
+        print(f"🔎 JQL (all blockers): {all_blocker_issue_jql}")
+
         try:
             all_blocker_tickets = jira.enhanced_jql(all_blocker_issue_jql, fields=fields)
         except HTTPError as e:
             print("❌ Jira API error while querying all blocker tickets.", file=sys.stderr)
             print(str(e), file=sys.stderr)
             sys.exit(1)
+
+        print(f"🔎 Raw response (all blockers): {all_blocker_tickets}")
 
         uncommitted_tickets = [
             t for t in all_blocker_tickets["issues"]
