@@ -38,7 +38,6 @@ def get_common_jira_fields(jira: Jira, tags_field_name: str) -> list[str]:
             f"Available fields: {', '.join(sorted(field_ids.keys()))}",
             file=sys.stderr,
         )
-        sys.exit(1)
     return [
         "key",
         "issuetype",
