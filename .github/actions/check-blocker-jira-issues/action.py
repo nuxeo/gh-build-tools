@@ -113,9 +113,28 @@ def main() -> None:
 
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
+    # Debug: test with raw HTTP request to bypass library
+    import requests as req
+    raw_resp = req.get(
+        f"{jira_url}/rest/api/3/search/jql",
+        params={"jql": f"project = {jira_project}", "maxResults": 3, "fields": "key"},
+        auth=(jira_user, jira_token),
+    )
+    print(f"🔎 DEBUG raw HTTP status: {raw_resp.status_code}")
+    print(f"🔎 DEBUG raw HTTP body: {raw_resp.text[:1000]}")
+
+    # Also try v2 endpoint to compare
+    raw_resp_v2 = req.get(
+        f"{jira_url}/rest/api/2/search",
+        params={"jql": f"project = {jira_project}", "maxResults": 3, "fields": "key"},
+        auth=(jira_user, jira_token),
+    )
+    print(f"🔎 DEBUG v2 HTTP status: {raw_resp_v2.status_code}")
+    print(f"🔎 DEBUG v2 HTTP body: {raw_resp_v2.text[:1000]}")
+
     # Debug: test with simplest possible query first
     try:
-        debug_simple = jira.enhanced_jql(f"project = {jira_project}", fields=["issuekey"], limit=3)
+        debug_simple = jira.enhanced_jql(f"project = {jira_project}", fields=["key"], limit=3)
         print(f"🔎 DEBUG simple query (project only): {debug_simple}")
     except Exception as e:
         print(f"🔎 DEBUG simple query FAILED: {e}")
