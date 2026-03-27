@@ -96,6 +96,7 @@ def main() -> None:
         username=jira_user,
         password=jira_token,
         cloud=True,
+        api_version=3,
     )
 
     repo = Repo(repository_path)
