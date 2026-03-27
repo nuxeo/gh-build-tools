@@ -7,7 +7,7 @@ from git import Repo
 from git.exc import GitCommandError
 from requests import HTTPError
 
-DEFAULT_JIRA_TAGS_FIELD = "Tags"
+JIRA_TAGS_FIELD = "Tags"
 
 
 def _jql_quote(value: str) -> str:
@@ -29,18 +29,22 @@ def get_jira_field_ids(jira: Jira) -> dict[str, str]:
     return {f["name"]: f["id"] for f in jira.get_all_fields()}
 
 
-def get_common_jira_fields(jira: Jira, tags_field_name: str) -> tuple[list[str], str | None]:
+def get_common_jira_fields(jira: Jira, tags_field_name: str) -> list[str]:
     field_ids = get_jira_field_ids(jira)
     tags_id = field_ids.get(tags_field_name)
     if not tags_id:
         print(
-            f"⚠️ Jira field '{tags_field_name}' not found, tag-based filtering will be skipped. "
+            f"❌ Jira field '{tags_field_name}' not found. "
             f"Available fields: {', '.join(sorted(field_ids.keys()))}",
+            file=sys.stderr,
         )
-    fields = ["key", "issuetype", "summary"]
-    if tags_id:
-        fields.append(tags_id)
-    return fields, tags_id
+        sys.exit(1)
+    return [
+        "key",
+        "issuetype",
+        "summary",
+        tags_id,
+    ]
 
 
 def format_ticket_keys(tickets: list[dict]) -> str:
@@ -81,8 +85,7 @@ def main() -> None:
 
     jira_project = get_required_env("JIRA_PROJECT")
     jira_priority = get_required_env("JIRA_PRIORITY")
-    jira_ignore_tag = os.getenv("JIRA_IGNORE_TAG", "")
-    jira_tags_field = os.getenv("JIRA_TAGS_FIELD", DEFAULT_JIRA_TAGS_FIELD)
+    jira_ignore_tag = get_required_env("JIRA_IGNORE_TAG")
     jira_moving_version = get_required_env("JIRA_MOVING_VERSION")
     jira_release_version = os.getenv("JIRA_RELEASE_VERSION")
 
@@ -110,7 +113,7 @@ def main() -> None:
         f" AND statusCategory != Done"
     )
 
-    fields, tags_id = get_common_jira_fields(jira, jira_tags_field)
+    fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
     try:
         unresolved_tickets = jira.enhanced_jql(open_blocker_issue_jql, fields=fields)
@@ -145,16 +148,12 @@ def main() -> None:
 
         print(f"🔍 Found {len(committed_ticket_keys)} committed ticket keys: {committed_ticket_keys} from {previous_release_version} to {build_version}")
 
-        tags_filter = ""
-        if tags_id and jira_ignore_tag:
-            tags_filter = f" AND ({jira_tags_field} is EMPTY OR {jira_tags_field} != {_jql_quote(jira_ignore_tag)})"
-
         all_blocker_issue_jql = (
             f"project = {jira_project}"
             f" AND priority = {_jql_quote(jira_priority)}"
             f" AND fixVersion in ({fix_versions})"
             f" AND statusCategory = Done"
-            f"{tags_filter}"
+            f" AND ({JIRA_TAGS_FIELD} is EMPTY OR {JIRA_TAGS_FIELD} != {_jql_quote(jira_ignore_tag)})"
         )
         try:
             all_blocker_tickets = jira.enhanced_jql(all_blocker_issue_jql, fields=fields)
