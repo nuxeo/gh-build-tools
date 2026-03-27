@@ -115,7 +115,7 @@ def main() -> None:
 
     # Debug: test with simplest possible query first
     try:
-        debug_simple = jira.enhanced_jql(f"project = {jira_project}", fields=["key"], limit=3)
+        debug_simple = jira.enhanced_jql(f"project = {jira_project}", fields=["issuekey"], limit=3)
         print(f"🔎 DEBUG simple query (project only): {debug_simple}")
     except Exception as e:
         print(f"🔎 DEBUG simple query FAILED: {e}")
