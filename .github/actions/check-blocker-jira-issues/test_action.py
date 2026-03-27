@@ -31,6 +31,7 @@ REQUIRED_ENV = {
     "JIRA_PROJECT": "NXP",
     "JIRA_PRIORITY": "Highest",
     "JIRA_IGNORE_TAG": "grype",
+    "JIRA_TAGS_FIELD": "Tags",
     "JIRA_MOVING_VERSION": "NXP-2023.x",
 }
 
@@ -132,12 +133,14 @@ class TestGetJiraFieldIds:
 
 class TestGetCommonJiraFields:
     def test_returns_fields_with_tag_id(self, mock_jira):
-        fields = get_common_jira_fields(mock_jira, "Tags")
+        fields, tags_id = get_common_jira_fields(mock_jira, "Tags")
         assert fields == ["key", "issuetype", "summary", "customfield_10076"]
+        assert tags_id == "customfield_10076"
 
-    def test_exits_on_unknown_tag_field(self, mock_jira):
-        with pytest.raises(SystemExit):
-            get_common_jira_fields(mock_jira, "NonExistentField")
+    def test_returns_fields_without_tag_id_when_missing(self, mock_jira):
+        fields, tags_id = get_common_jira_fields(mock_jira, "NonExistentField")
+        assert fields == ["key", "issuetype", "summary"]
+        assert tags_id is None
 
 
 class TestFormatTicketKeys:
@@ -511,3 +514,58 @@ class TestMainMissingRequiredEnv:
             pytest.raises(SystemExit),
         ):
             main()
+
+
+JIRA_FIELDS_NO_TAGS = [
+    {"name": "Summary", "id": "summary"},
+    {"name": "Issue Type", "id": "issuetype"},
+]
+
+
+class TestMainTagsFieldMissing:
+    """Scenario: Tags field does not exist in Jira → tag filtering skipped, action still works."""
+
+    def test_succeeds_without_tags_field(self, base_env):
+        with (
+            patch.dict(os.environ, base_env, clear=True),
+            patch("action.Jira") as MockJira,
+            patch("action.Repo") as MockRepo,
+        ):
+            jira = MockJira.return_value
+            jira.get_all_fields.return_value = JIRA_FIELDS_NO_TAGS
+            jira.jql.return_value = _jira_response([])
+
+            repo = MockRepo.return_value
+            repo.working_dir = "/fake/repo"
+
+            main()
+
+        outputs = _read_outputs(base_env)
+        assert outputs["has_blocker_issues"] == "false"
+
+    def test_uncommitted_jql_skips_tags_filter(self, base_env):
+        base_env["CHECK_UNCOMMITTED"] = "true"
+        base_env["BUILD_VERSION"] = "2023.2.0"
+        base_env["PREVIOUS_RELEASE_VERSION"] = "2023.1.0"
+
+        with (
+            patch.dict(os.environ, base_env, clear=True),
+            patch("action.Jira") as MockJira,
+            patch("action.Repo") as MockRepo,
+        ):
+            jira = MockJira.return_value
+            jira.get_all_fields.return_value = JIRA_FIELDS_NO_TAGS
+            jira.jql.side_effect = [
+                _jira_response([]),
+                _jira_response([]),
+            ]
+
+            repo = MockRepo.return_value
+            repo.working_dir = "/fake/repo"
+            repo.git.log.return_value = ""
+
+            main()
+
+            second_jql = jira.jql.call_args_list[1][0][0]
+            assert "statusCategory = Done" in second_jql
+            assert "Tags" not in second_jql

@@ -32,6 +32,11 @@ inputs:
   jira-ignore-tag:
     description: Jira tag value to exclude from uncommitted issue checks (issues tagged with this are ignored).
     default: "grype"
+  jira-tags-field:
+    description: |
+      Name of the Jira custom field used for tags. When the field does not exist in the
+      target Jira project, tag-based filtering is silently skipped.
+    default: "Tags"
   check-uncommitted:
     description: Whether to also check for uncommitted blocker issues (issues resolved but not present in Git changelog).
     default: "true"
@@ -82,6 +87,7 @@ runs:
         JIRA_RELEASE_VERSION: ${{ inputs.jira-release-version }}
         JIRA_PRIORITY: ${{ inputs.jira-priority }}
         JIRA_IGNORE_TAG: ${{ inputs.jira-ignore-tag }}
+        JIRA_TAGS_FIELD: ${{ inputs.jira-tags-field }}
         CHECK_UNCOMMITTED: ${{ inputs.check-uncommitted }}
         BUILD_VERSION: ${{ inputs.build-version }}
         PREVIOUS_RELEASE_VERSION: ${{ inputs.previous-release-version }}
