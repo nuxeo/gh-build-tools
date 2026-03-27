@@ -31,19 +31,17 @@ def get_jira_field_ids(jira: Jira) -> dict[str, str]:
 
 def get_common_jira_fields(jira: Jira, tags_field_name: str) -> list[str]:
     field_ids = get_jira_field_ids(jira)
+    print(f"🔎 DEBUG get_all_fields returned {len(field_ids)} fields: {field_ids}")
     tags_id = field_ids.get(tags_field_name)
     if not tags_id:
         print(
-            f"❌ Jira field '{tags_field_name}' not found. "
+            f"⚠️ Jira field '{tags_field_name}' not found, skipping tag filter. "
             f"Available fields: {', '.join(sorted(field_ids.keys()))}",
-            file=sys.stderr,
         )
-    return [
-        "key",
-        "issuetype",
-        "summary",
-        tags_id,
-    ]
+    fields = ["key", "issuetype", "summary"]
+    if tags_id:
+        fields.append(tags_id)
+    return fields
 
 
 def format_ticket_keys(tickets: list[dict]) -> str:
@@ -114,12 +112,17 @@ def main() -> None:
 
     fields = get_common_jira_fields(jira, JIRA_TAGS_FIELD)
 
+    print(f"🔎 DEBUG JQL (unresolved): {open_blocker_issue_jql}")
+    print(f"🔎 DEBUG fields: {fields}")
+
     try:
         unresolved_tickets = jira.enhanced_jql(open_blocker_issue_jql, fields=fields)
     except HTTPError as e:
         print("❌ Jira API error while querying unresolved tickets.", file=sys.stderr)
         print(str(e), file=sys.stderr)
         sys.exit(1)
+
+    print(f"🔎 DEBUG raw response (unresolved): {unresolved_tickets}")
 
     print(f"🔍 Found {len(unresolved_tickets['issues'])} unresolved blocker ticket(s) for fix versions: {fix_versions}")
 
