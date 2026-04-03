@@ -42,12 +42,50 @@ runs:
       with:
         java-version: ${{ inputs.java-version }}
 
-    - name: Retrieve Nuxeo Parent Major version
+    - name: Compute Nuxeo Parent version filter pattern
       shell: bash
       run: |
         BASE_BRANCH="${{ inputs.base-branch }}"
         MAJOR_VERSION=${BASE_BRANCH#lts-}
-        echo "MAJOR_VERSION=$MAJOR_VERSION" >> $GITHUB_ENV
+
+        CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout)
+        # Normalize to 2-digit version to handle dev snapshots (e.g. 2025.17.1 -> 2025.17)
+        CURRENT_VERSION=$(echo "$CURRENT_VERSION" | cut -d'.' -f1,2)
+        MINOR_VERSION=$(echo "$CURRENT_VERSION" | cut -d'.' -f2)
+
+        # Build a regex that only matches 2-digit versions of the same major >= current minor
+        minor_digit_count=${#MINOR_VERSION}
+        regex_parts=""
+
+        for ((i=0; i<minor_digit_count; i++)); do
+          d="${MINOR_VERSION:$i:1}"
+          prefix="${MINOR_VERSION:0:$i}"
+          remaining=$((minor_digit_count - i - 1))
+
+          if ((i == minor_digit_count-1)); then
+            # Last digit position: allow current digit through 9, keeping all preceding digits fixed
+            ((d < 9)) && digit_range="[${d}-9]" || digit_range="${d}"
+            regex_parts="${regex_parts}${prefix}${digit_range}|"
+          else
+            # Non-last digit position: allow digits strictly greater than current at this position,
+            # with any digit allowed in the remaining positions
+            next=$((d+1))
+            if ((next <= 9)); then
+              ((next < 9)) && digit_range="[${next}-9]" || digit_range="${next}"
+              if ((remaining == 1)); then
+                suffix='\d'
+              else
+                suffix="\\d{${remaining}}"
+              fi
+              regex_parts="${regex_parts}${prefix}${digit_range}${suffix}|"
+            fi
+          fi
+        done
+
+        # Also allow any number with more digits than the current minor (e.g. 100+ if current is 2-digit)
+        MINOR_GTE_REGEX="(${regex_parts}\\d{$((minor_digit_count+1)),})"
+        NUXEO_PARENT_VERSION_PATTERN="^${MAJOR_VERSION}\\.${MINOR_GTE_REGEX}$"
+        printf 'NUXEO_PARENT_VERSION_PATTERN=%s\n' "$NUXEO_PARENT_VERSION_PATTERN" >> $GITHUB_ENV
 
     - name: Retrieve Repository Name
       shell: bash
@@ -65,7 +103,7 @@ runs:
     - name: Run Updatecli
       env:
         REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-        NUXEO_PARENT_MAJOR_VERSION: ${{ env.MAJOR_VERSION }}
+        NUXEO_PARENT_VERSION_PATTERN: ${{ env.NUXEO_PARENT_VERSION_PATTERN }}
         MVN_REPO_USERNAME: ${{ env.MVN_REPO_USERNAME || inputs.mvn-repo-username }}
         MVN_REPO_PASSWORD: ${{ env.MVN_REPO_PASSWORD || inputs.mvn-repo-password }}
         UPDATECLI_GITHUB_BRANCH: "${{ inputs.base-branch }}"

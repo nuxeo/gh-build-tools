@@ -13,7 +13,7 @@ autodiscovery:
             nuxeo-parent: ""
       versionfilter:
         kind: regex
-        pattern: '^{{ requiredEnv "NUXEO_PARENT_MAJOR_VERSION" }}.\d+$'
+        pattern: '{{ requiredEnv "NUXEO_PARENT_VERSION_PATTERN" }}'
 
 actions:
   pr:
