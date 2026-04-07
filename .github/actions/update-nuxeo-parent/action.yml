@@ -66,7 +66,16 @@ runs:
         echo "Normalized nuxeo-parent version: $CURRENT_VERSION"
         MINOR_VERSION=$(echo "$CURRENT_VERSION" | cut -d'.' -f2)
 
-        # Build a regex that only matches 2-digit versions of the same major >= current minor
+        # Build a regex matching minor versions >= $MINOR_VERSION.
+        # The regex is constructed digit-by-digit from the current minor version:
+        # - For each digit position, allow strictly greater digits with any digits in remaining positions
+        # - For the last digit position, allow the current digit through 9
+        # - Finally, allow any number with more digits (e.g. 100+ when current is 2-digit)
+        #
+        # Example: MINOR_VERSION=17 produces (1[7-9]|[2-9]\d|\d{3,})
+        #   - 1[7-9]   matches 17, 18, 19       (last digit >= 7, prefix fixed)
+        #   - [2-9]\d  matches 20-99            (first digit > 1, any second digit)
+        #   - \d{3,}   matches 100+             (more digits than current)
         minor_digit_count=${#MINOR_VERSION}
         regex_parts=""
 
