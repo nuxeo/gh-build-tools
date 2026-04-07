@@ -43,14 +43,27 @@ runs:
         java-version: ${{ inputs.java-version }}
 
     - name: Compute Nuxeo Parent version filter pattern
+      env:
+        MVN_REPO_USERNAME: ${{ inputs.mvn-repo-username }}
+        MVN_REPO_PASSWORD: ${{ inputs.mvn-repo-password }}
       shell: bash
       run: |
         BASE_BRANCH="${{ inputs.base-branch }}"
         MAJOR_VERSION=${BASE_BRANCH#lts-}
 
-        CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout)
+        MVN_LOG_FILE=$(mktemp)
+        CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -DforceStdout --log-file "$MVN_LOG_FILE") || {
+          echo "Failed to evaluate project.parent.version. Maven logs:"
+          cat "$MVN_LOG_FILE"
+          rm -f "$MVN_LOG_FILE"
+          exit 1
+        }
+        rm -f "$MVN_LOG_FILE"
+        echo "Current nuxeo-parent version from pom.xml: $CURRENT_VERSION"
+
         # Normalize to 2-digit version to handle dev snapshots (e.g. 2025.17.1 -> 2025.17)
         CURRENT_VERSION=$(echo "$CURRENT_VERSION" | cut -d'.' -f1,2)
+        echo "Normalized nuxeo-parent version: $CURRENT_VERSION"
         MINOR_VERSION=$(echo "$CURRENT_VERSION" | cut -d'.' -f2)
 
         # Build a regex that only matches 2-digit versions of the same major >= current minor
@@ -85,6 +98,7 @@ runs:
         # Also allow any number with more digits than the current minor (e.g. 100+ if current is 2-digit)
         MINOR_GTE_REGEX="(${regex_parts}\\d{$((minor_digit_count+1)),})"
         NUXEO_PARENT_VERSION_PATTERN="^${MAJOR_VERSION}\\.${MINOR_GTE_REGEX}$"
+        echo "Computed nuxeo-parent version filter pattern: $NUXEO_PARENT_VERSION_PATTERN"
         printf 'NUXEO_PARENT_VERSION_PATTERN=%s\n' "$NUXEO_PARENT_VERSION_PATTERN" >> $GITHUB_ENV
 
     - name: Retrieve Repository Name
