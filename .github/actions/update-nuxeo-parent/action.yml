@@ -51,14 +51,11 @@ runs:
         BASE_BRANCH="${{ inputs.base-branch }}"
         MAJOR_VERSION=${BASE_BRANCH#lts-}
 
-        MVN_LOG_FILE=$(mktemp)
-        CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -DforceStdout --log-file "$MVN_LOG_FILE") || {
-          echo "Failed to evaluate project.parent.version. Maven logs:"
-          cat "$MVN_LOG_FILE"
-          rm -f "$MVN_LOG_FILE"
+        CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout) || {
+          echo "Failed to evaluate project.parent.version via Maven. Maven logs:"
+          mvn help:evaluate -Dexpression=project.parent.version -DforceStdout
           exit 1
         }
-        rm -f "$MVN_LOG_FILE"
         echo "Current nuxeo-parent version from pom.xml: $CURRENT_VERSION"
 
         # Normalize to 2-digit version to handle dev snapshots (e.g. 2025.17.1 -> 2025.17)
