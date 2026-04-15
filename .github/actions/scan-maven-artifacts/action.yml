@@ -1,0 +1,112 @@
+name: Scan Maven Artifacts
+description: Scan a list of Maven artifacts for vulnerabilities with Grype.
+inputs:
+  artifacts:
+    description: |
+      Comma-separated list of Maven artifacts to scan in the "groupId:artifactId:version:extension" format.
+    required: true
+  by-cve:
+    description: Whether to orient results by CVE rather than GHSA.
+    default: 'false'
+    required: false
+  fail-build:
+    description: |
+      Whether to fail the build if a vulnerability is found with a higher severity. That severity defaults to "medium"
+      and can be set with "severity-cutoff".
+    default: 'true'
+    required: false
+  java-version:
+    description: Java version for the Maven build setup.
+    default: '17'
+    required: false
+  mvn-repo-username:
+    description: Maven repository username.
+    required: true
+  mvn-repo-password:
+    description: Maven repository password.
+    required: true
+  only-fixed:
+    description: Whether to only report vulnerabilities that have a fix available.
+    default: 'false'
+    required: false
+  severity-cutoff:
+    description: |
+      Minimum vulnerability severity to trigger a failure. Valid choices are "negligible", "low", "medium", "high" and
+      "critical".
+    default: medium
+    required: false
+  version:
+    description: Version of the Maven artifacts to scan, used for workflow artifact naming.
+    required: true
+  vex:
+    description: List of a VEX documents to consider when producing scanning results.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Setup Maven Build
+      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@7398a98d9cc4c317e9d1d08101fb63b5cd895c4f # v0.3.0
+      with:
+        java-version: ${{ inputs.java-version }}
+
+    - name: Fetch Maven artifacts
+      env:
+        MVN_REPO_USERNAME: ${{ inputs.mvn-repo-username }}
+        MVN_REPO_PASSWORD: ${{ inputs.mvn-repo-password }}
+      shell: bash
+      run: |
+        for artifact in $(echo "${{ inputs.artifacts }}" | tr ',' ' '); do
+          echo "Processing $artifact"
+          mvn dependency:copy -N -Dartifact=${artifact} -DoutputDirectory=target
+        done
+
+    - name: Scan Maven artifacts with Grype - JSON output
+      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      id: scan-json
+      with:
+        by-cve: ${{ inputs.by-cve }}
+        fail-build: false
+        only-fixed: ${{ inputs.only-fixed }}
+        output-file: target/grype-maven-artifacts-${{ inputs.version }}.json
+        output-format: json
+        path: target
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        vex: ${{ inputs.vex }}
+
+    - name: Upload JSON results as workflow artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: grype-maven-artifacts
+        path: ${{ steps.scan-json.outputs.json }}
+
+    - name: Scan Maven artifacts with Grype - SARIF output
+      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      id: scan-sarif
+      with:
+        by-cve: ${{ inputs.by-cve }}
+        fail-build: false
+        only-fixed: ${{ inputs.only-fixed }}
+        output-format: sarif
+        path: target
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        vex: ${{ inputs.vex }}
+
+    - name: Upload SARIF results to GitHub code scanning
+      uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
+      with:
+        sarif_file: ${{ steps.scan-sarif.outputs.sarif }}
+
+    - name: Scan Maven artifacts with Grype - table output
+      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      with:
+        by-cve: ${{ inputs.by-cve }}
+        fail-build: ${{ inputs.fail-build }}
+        only-fixed: ${{ inputs.only-fixed }}
+        output-format: table
+        path: target
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        vex: ${{ inputs.vex }}

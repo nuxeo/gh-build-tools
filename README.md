@@ -12,6 +12,7 @@ Here follows the list of GitHub Actions topics available in the current document
     - [nuxeo-docker-build](#nuxeo-docker-build)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
     - [nuxeo-mvn-properties](#nuxeo-mvn-properties)
+    - [scan-maven-artifacts](#scan-maven-artifacts)
     - [setup-maven-build](#setup-maven-build)
     - [update-nuxeo-parent](#update-nuxeo-parent)
   - [Release](#release)
@@ -229,6 +230,22 @@ Example usage:
           additional-properties: |
             nuxeo.test.custom.property1=value1
             nuxeo.test.custom.property2=value2
+```
+
+For the list of all available inputs, check `action.yml` file.
+
+### scan-maven-artifacts
+
+Scan a list of Maven artifacts for vulnerabilities with Grype.
+
+Example usage:
+
+```yaml
+      - uses: nuxeo/gh-build-tools/.github/actions/scan-maven-artifacts@v0.10.4
+        with:
+          artifacts: org.nuxeo.packages:nuxeo-amazon-s3-package:2025.18.14:zip,org.nuxeo.packages:nuxeo-drive-package:2025.18.14:zip
+          mvn-repo-username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          mvn-repo-password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
 ```
 
 For the list of all available inputs, check `action.yml` file.
