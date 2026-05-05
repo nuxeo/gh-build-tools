@@ -15,6 +15,9 @@ on:
 
 jobs:
   check-blocker-jira-issues-unit:
+    if: >-
+      (github.event.review.state == 'approved' && contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.event.pull_request.user.login)) ||
+      (github.actor != 'dependabot[bot]' && github.event_name != 'pull_request_review')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,6 +41,9 @@ jobs:
         run: python -m pytest test_action.py -v
 
   check-blocker-jira-issues-integration:
+    if: >-
+      (github.event.review.state == 'approved' && contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.event.pull_request.user.login)) ||
+      (github.actor != 'dependabot[bot]' && github.event_name != 'pull_request_review')
     needs: check-blocker-jira-issues-unit
     runs-on: ubuntu-latest
     steps:
