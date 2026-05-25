@@ -53,16 +53,41 @@ runs:
       with:
         java-version: ${{ inputs.java-version }}
 
+    - name: Restore maven-dependency-plugin closure cache
+      id: restore-mdp-cache
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ~/.m2/repository
+        key: maven-dependency-plugin-3.8.1
+
     - name: Fetch Maven artifacts
       env:
         MVN_REPO_USERNAME: ${{ inputs.mvn-repo-username }}
         MVN_REPO_PASSWORD: ${{ inputs.mvn-repo-password }}
       shell: bash
       run: |
+        set -euo pipefail
+        mkdir -p target
+        STANDALONE_POM="${{ github.action_path }}/standalone-pom.xml"
+
         for artifact in $(echo "${{ inputs.artifacts }}" | tr ',' ' '); do
           echo "Processing $artifact"
-          mvn dependency:copy -N -Dartifact=${artifact} -DoutputDirectory=target
+          mvn -f "${STANDALONE_POM}" -B \
+            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get \
+            -Dartifact="${artifact}" \
+            -Dtransitive=false
+
+          # Copy the artifact ZIP files into target/.
+          IFS=':' read -r g a v _ <<< "${artifact}"
+          cp "${HOME}/.m2/repository/${g//.//}/${a}/${v}/${a}-${v}"*.zip target/
         done
+
+    - name: Save maven-dependency-plugin closure cache
+      if: steps.restore-mdp-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ~/.m2/repository
+        key: maven-dependency-plugin-3.8.1
 
     - name: Scan Maven artifacts with Grype - JSON output
       uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
