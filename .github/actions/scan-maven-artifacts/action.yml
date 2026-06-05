@@ -29,17 +29,28 @@ inputs:
     description: Whether to only report vulnerabilities that have a fix available.
     default: 'false'
     required: false
+  output-filename:
+    description: |
+      Base name for the Grype scan output files (JSON and text). The JSON file is uploaded as a workflow artifact by
+      default; if "upload-json" is "false", the text file is uploaded instead.
+    default: grype-maven-artifacts
+    required: false
   severity-cutoff:
     description: |
       Minimum vulnerability severity to trigger a failure. Valid choices are "negligible", "low", "medium", "high" and
       "critical".
     default: medium
     required: false
-  version:
-    description: Version of the Maven artifacts to scan, used for workflow artifact naming.
-    required: true
+  upload-json:
+    description: Whether to upload the Grype scan results as a JSON workflow artifact instead of text (table format).
+    default: 'true'
+    required: false
+  upload-sarif:
+    description: Whether to upload the Grype scan results (SARIF format) to GitHub code scanning.
+    default: 'true'
+    required: false
   vex:
-    description: List of a VEX documents to consider when producing scanning results.
+    description: List of VEX documents to consider when producing scanning results.
     required: false
 
 runs:
@@ -91,12 +102,12 @@ runs:
 
     - name: Scan Maven artifacts with Grype - JSON output
       uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
-      id: scan-json
+      if: ${{ inputs.upload-json == 'true' }}
       with:
         by-cve: ${{ inputs.by-cve }}
         fail-build: false
         only-fixed: ${{ inputs.only-fixed }}
-        output-file: target/grype-maven-artifacts-${{ inputs.version }}.json
+        output-file: target/${{ inputs.output-filename }}.json
         output-format: json
         path: target
         severity-cutoff: ${{ inputs.severity-cutoff }}
@@ -104,12 +115,14 @@ runs:
 
     - name: Upload JSON results as workflow artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ inputs.upload-json == 'true' }}
       with:
-        name: grype-maven-artifacts
-        path: ${{ steps.scan-json.outputs.json }}
+        name: ${{ inputs.output-filename }}
+        path: target/${{ inputs.output-filename }}.json
 
     - name: Scan Maven artifacts with Grype - SARIF output
       uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      if: ${{ inputs.upload-sarif == 'true' }}
       id: scan-sarif
       with:
         by-cve: ${{ inputs.by-cve }}
@@ -122,6 +135,7 @@ runs:
 
     - name: Upload SARIF results to GitHub code scanning
       uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      if: ${{ inputs.upload-sarif == 'true' }}
       with:
         sarif_file: ${{ steps.scan-sarif.outputs.sarif }}
 
@@ -131,7 +145,15 @@ runs:
         by-cve: ${{ inputs.by-cve }}
         fail-build: ${{ inputs.fail-build }}
         only-fixed: ${{ inputs.only-fixed }}
+        output-file: target/${{ inputs.output-filename }}.txt
         output-format: table
         path: target
         severity-cutoff: ${{ inputs.severity-cutoff }}
         vex: ${{ inputs.vex }}
+
+    - name: Upload table results as workflow artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ always() && inputs.upload-json == 'false' }}
+      with:
+        name: ${{ inputs.output-filename }}
+        path: target/${{ inputs.output-filename }}.txt
