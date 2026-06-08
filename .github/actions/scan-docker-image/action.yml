@@ -1,0 +1,139 @@
+name: Scan Docker image
+description: Scan a Docker image for vulnerabilities with Grype.
+inputs:
+  by-cve:
+    description: Whether to orient results by CVE rather than GHSA.
+    default: 'false'
+    required: false
+  fail-build:
+    description: |
+      Whether to fail the build if a vulnerability is found with a higher severity. That severity defaults to "medium"
+      and can be set with "severity-cutoff".
+    default: 'true'
+    required: false
+  image-name:
+    description: Name of the Docker image to scan, excluding registry and tag.
+    required: true
+  image-tag:
+    description: Tag of the Docker image to scan.
+    required: true
+  only-fixed:
+    description: Whether to only report vulnerabilities that have a fix available.
+    default: 'false'
+    required: false
+  output-filename:
+    description: |
+      Base name for the Grype scan output files (JSON and text). The JSON file is uploaded as a workflow artifact by
+      default; if "upload-json" is "false", the text file is uploaded instead.
+    default: grype-docker-image
+    required: false
+  registry:
+    description: Docker registry to pull the image from.
+    required: true
+  registry-username:
+    description: Docker registry username.
+    required: true
+  registry-password:
+    description: Docker registry password.
+    required: true
+  severity-cutoff:
+    description: |
+      Minimum vulnerability severity to trigger a failure. Valid choices are "negligible", "low", "medium", "high" and
+      "critical".
+    default: medium
+    required: false
+  upload-json:
+    description: Whether to upload the Grype scan results as a JSON workflow artifact instead of text (table format).
+    default: 'true'
+    required: false
+  upload-sarif:
+    description: Whether to upload the Grype scan results (SARIF format) to GitHub code scanning.
+    default: 'true'
+    required: false
+  vex:
+    description: List of VEX documents to consider when producing scanning results.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+    - name: Compute image name variants
+      shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        IMAGE_NAME: ${{ inputs.image-name }}
+        IMAGE_TAG: ${{ inputs.image-tag }}
+      run: |
+        echo "FULL_IMAGE_NAME=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+    - name: Log in to Docker registry
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-password }}
+
+    - name: Pull Docker image
+      shell: bash
+      run: docker pull ${{ env.FULL_IMAGE_NAME }}
+
+    - name: Scan Docker image with Grype - JSON output
+      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      if: ${{ inputs.upload-json == 'true' }}
+      with:
+        by-cve: ${{ inputs.by-cve }}
+        fail-build: false
+        image: ${{ env.FULL_IMAGE_NAME }}
+        only-fixed: ${{ inputs.only-fixed }}
+        output-file: target/${{ inputs.output-filename }}.json
+        output-format: json
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        vex: ${{ inputs.vex }}
+
+    - name: Upload JSON results as workflow artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ inputs.upload-json == 'true' }}
+      with:
+        name: ${{ inputs.output-filename }}
+        path: target/${{ inputs.output-filename }}.json
+
+    - name: Scan Docker image with Grype - SARIF output
+      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      if: ${{ inputs.upload-sarif == 'true' }}
+      id: scan-sarif
+      with:
+        by-cve: ${{ inputs.by-cve }}
+        fail-build: false
+        image: ${{ env.FULL_IMAGE_NAME }}
+        only-fixed: ${{ inputs.only-fixed }}
+        output-format: sarif
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        vex: ${{ inputs.vex }}
+
+    - name: Upload SARIF results to GitHub code scanning
+      uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      if: ${{ inputs.upload-sarif == 'true' }}
+      with:
+        sarif_file: ${{ steps.scan-sarif.outputs.sarif }}
+
+    - name: Scan Docker image with Grype - table output
+      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      with:
+        by-cve: ${{ inputs.by-cve }}
+        fail-build: ${{ inputs.fail-build }}
+        image: ${{ env.FULL_IMAGE_NAME }}
+        only-fixed: ${{ inputs.only-fixed }}
+        output-file: target/${{ inputs.output-filename }}.txt
+        output-format: table
+        severity-cutoff: ${{ inputs.severity-cutoff }}
+        vex: ${{ inputs.vex }}
+
+    - name: Upload table results as workflow artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ always() && inputs.upload-json == 'false' }}
+      with:
+        name: ${{ inputs.output-filename }}
+        path: target/${{ inputs.output-filename }}.txt

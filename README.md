@@ -12,6 +12,7 @@ Here follows the list of GitHub Actions topics available in the current document
     - [nuxeo-docker-build](#nuxeo-docker-build)
     - [nuxeo-helmfile-install](#nuxeo-helmfile-install)
     - [nuxeo-mvn-properties](#nuxeo-mvn-properties)
+    - [scan-docker-image](#scan-docker-image)
     - [scan-maven-artifacts](#scan-maven-artifacts)
     - [setup-maven-build](#setup-maven-build)
     - [update-nuxeo-parent](#update-nuxeo-parent)
@@ -230,6 +231,24 @@ Example usage:
           additional-properties: |
             nuxeo.test.custom.property1=value1
             nuxeo.test.custom.property2=value2
+```
+
+For the list of all available inputs, check `action.yml` file.
+
+### scan-docker-image
+
+Scan a Docker image for vulnerabilities with Grype.
+
+Example usage:
+
+```yaml
+      - uses: nuxeo/gh-build-tools/.github/actions/scan-docker-image@v0.11.0
+        with:
+          image-name: nuxeo/nuxeo
+          image-tag: 2025
+          registry: docker-private.packages.nuxeo.com
+          registry-username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          registry-password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
 ```
 
 For the list of all available inputs, check `action.yml` file.
