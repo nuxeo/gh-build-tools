@@ -115,7 +115,7 @@ runs:
         echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_ENV
 
     - name: Install Updatecli
-      uses: Alfresco/alfresco-build-tools/.github/actions/setup-updatecli@a6a8be7429080c132815d0482a55ae4fd28f15ba # v18.7.0
+      uses: Alfresco/alfresco-build-tools/.github/actions/setup-updatecli@e59946f0c1c999db1682aea8bd05de6ac97581e6 # v18.7.1
       with:
         # bug in version 0.112.0, see github.com/updatecli/updatecli/pull/7223
         version: '0.111.0'
