@@ -1,10 +1,6 @@
-name: Scan Maven Artifacts
-description: Scan a list of Maven artifacts for vulnerabilities with Grype.
+name: Scan Docker image
+description: Scan a Docker image for vulnerabilities with Grype.
 inputs:
-  artifacts:
-    description: |
-      Comma-separated list of Maven artifacts to scan in the "groupId:artifactId:version:extension" format.
-    required: true
   by-cve:
     description: Whether to orient results by CVE rather than GHSA.
     default: 'false'
@@ -15,15 +11,11 @@ inputs:
       and can be set with "severity-cutoff".
     default: 'true'
     required: false
-  java-version:
-    description: Java version for the Maven build setup.
-    default: '17'
-    required: false
-  mvn-repo-username:
-    description: Maven repository username.
+  image-name:
+    description: Name of the Docker image to scan, excluding registry and tag.
     required: true
-  mvn-repo-password:
-    description: Maven repository password.
+  image-tag:
+    description: Tag of the Docker image to scan.
     required: true
   only-fixed:
     description: Whether to only report vulnerabilities that have a fix available.
@@ -33,8 +25,17 @@ inputs:
     description: |
       Base name for the Grype scan output files (JSON and text). The JSON file is uploaded as a workflow artifact by
       default; if "upload-json" is "false", the text file is uploaded instead.
-    default: grype-maven-artifacts
+    default: grype-docker-image
     required: false
+  registry:
+    description: Docker registry to pull the image from.
+    required: true
+  registry-username:
+    description: Docker registry username.
+    required: true
+  registry-password:
+    description: Docker registry password.
+    required: true
   severity-cutoff:
     description: |
       Minimum vulnerability severity to trigger a failure. Valid choices are "negligible", "low", "medium", "high" and
@@ -59,57 +60,36 @@ runs:
     - name: Checkout
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-    - name: Setup Maven Build
-      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@7398a98d9cc4c317e9d1d08101fb63b5cd895c4f # v0.3.0
-      with:
-        java-version: ${{ inputs.java-version }}
-
-    - name: Restore maven-dependency-plugin closure cache
-      id: restore-mdp-cache
-      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-      with:
-        path: ~/.m2/repository
-        key: maven-dependency-plugin-3.8.1
-
-    - name: Fetch Maven artifacts
-      env:
-        MVN_REPO_USERNAME: ${{ inputs.mvn-repo-username }}
-        MVN_REPO_PASSWORD: ${{ inputs.mvn-repo-password }}
+    - name: Compute image name variants
       shell: bash
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        IMAGE_NAME: ${{ inputs.image-name }}
+        IMAGE_TAG: ${{ inputs.image-tag }}
       run: |
-        set -euo pipefail
-        mkdir -p target
-        STANDALONE_POM="${{ github.action_path }}/standalone-pom.xml"
+        echo "FULL_IMAGE_NAME=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" >> "$GITHUB_ENV"
 
-        for artifact in $(echo "${{ inputs.artifacts }}" | tr ',' ' '); do
-          echo "Processing $artifact"
-          mvn -f "${STANDALONE_POM}" -B \
-            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get \
-            -Dartifact="${artifact}" \
-            -Dtransitive=false
-
-          # Copy the artifact ZIP files into target/.
-          IFS=':' read -r g a v _ <<< "${artifact}"
-          cp "${HOME}/.m2/repository/${g//.//}/${a}/${v}/${a}-${v}"*.zip target/
-        done
-
-    - name: Save maven-dependency-plugin closure cache
-      if: steps.restore-mdp-cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+    - name: Log in to Docker registry
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
       with:
-        path: ~/.m2/repository
-        key: maven-dependency-plugin-3.8.1
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-username }}
+        password: ${{ inputs.registry-password }}
 
-    - name: Scan Maven artifacts with Grype - JSON output
+    - name: Pull Docker image
+      shell: bash
+      run: docker pull ${{ env.FULL_IMAGE_NAME }}
+
+    - name: Scan Docker image with Grype - JSON output
       uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
       if: ${{ inputs.upload-json == 'true' }}
       with:
         by-cve: ${{ inputs.by-cve }}
         fail-build: false
+        image: ${{ env.FULL_IMAGE_NAME }}
         only-fixed: ${{ inputs.only-fixed }}
         output-file: target/${{ inputs.output-filename }}.json
         output-format: json
-        path: target
         severity-cutoff: ${{ inputs.severity-cutoff }}
         vex: ${{ inputs.vex }}
 
@@ -120,16 +100,16 @@ runs:
         name: ${{ inputs.output-filename }}
         path: target/${{ inputs.output-filename }}.json
 
-    - name: Scan Maven artifacts with Grype - SARIF output
+    - name: Scan Docker image with Grype - SARIF output
       uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
       if: ${{ inputs.upload-sarif == 'true' }}
       id: scan-sarif
       with:
         by-cve: ${{ inputs.by-cve }}
         fail-build: false
+        image: ${{ env.FULL_IMAGE_NAME }}
         only-fixed: ${{ inputs.only-fixed }}
         output-format: sarif
-        path: target
         severity-cutoff: ${{ inputs.severity-cutoff }}
         vex: ${{ inputs.vex }}
 
@@ -139,15 +119,15 @@ runs:
       with:
         sarif_file: ${{ steps.scan-sarif.outputs.sarif }}
 
-    - name: Scan Maven artifacts with Grype - table output
+    - name: Scan Docker image with Grype - table output
       uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
       with:
         by-cve: ${{ inputs.by-cve }}
         fail-build: ${{ inputs.fail-build }}
+        image: ${{ env.FULL_IMAGE_NAME }}
         only-fixed: ${{ inputs.only-fixed }}
         output-file: target/${{ inputs.output-filename }}.txt
         output-format: table
-        path: target
         severity-cutoff: ${{ inputs.severity-cutoff }}
         vex: ${{ inputs.vex }}
 
