@@ -18,7 +18,7 @@ inputs:
   nuxeo-connect-url:
     description: URL of Nuxeo Connect server to use for installing Nuxeo Connect packages (defaults to the production Nuxeo Connect server)
     required: false
-    default: "https://connect.nuxeo.com/nuxeo/site/connect"
+    default: "https://connect.nuxeo.com/nuxeo/site/marketplace"
   nuxeo-clid:
     description: Nuxeo Connect License ID (CLID) to use for installing Nuxeo Connect packages. Required for nuxeo connect modules.
     required: false
