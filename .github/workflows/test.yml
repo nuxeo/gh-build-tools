@@ -207,7 +207,7 @@ jobs:
           base-registry-username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
           base-registry-password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
           nuxeo-connect-modules: ${{ env.NUXEO_CONNECT_MODULE }}
-          nuxeo-clid: ${{ secrets.TEST_CLID }}
+          nuxeo-clid: ${{ secrets.DEVOPS_CLID }}
           nuxeo-local-modules-path: ${{ env.NUXEO_LOCAL_MODULES_PATH }}
           os-packages: ${{ env.NUXEO_OS_PACKAGES }}
           os-packages-user: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
