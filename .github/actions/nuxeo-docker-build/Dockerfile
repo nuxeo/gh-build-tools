@@ -11,6 +11,7 @@ ARG PACKAGES_AUTH_USER
 ARG PACKAGES_AUTH_TOKEN
 ARG PACKAGES_LIST
 ARG NUXEO_CONNECT_MODULES
+ARG NUXEO_CONNECT_URL
 ARG IMAGE_TITLE="Nuxeo Server"
 ARG IMAGE_LICENSE="Apache 2.0"
 
@@ -44,8 +45,7 @@ EOC
 USER nuxeo
 
 RUN --mount=type=bind,from=modules,target=/modules \
-    --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID \
-    --mount=type=secret,id=NUXEO_CONNECT_URL,env=NUXEO_CONNECT_URL <<EOC
+    --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID <<EOC
 if [ -n "${NUXEO_CONNECT_MODULES}" ]; then
     if [ -n "${NUXEO_CONNECT_URL}" ]; then
         /install-packages.sh --clid ${NUXEO_CLID} --connect-url ${NUXEO_CONNECT_URL} ${NUXEO_CONNECT_MODULES}

@@ -173,7 +173,6 @@ runs:
       uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
       env:
         NUXEO_CLID: ${{ inputs.nuxeo-clid }}
-        NUXEO_CONNECT_URL: ${{ inputs.nuxeo-connect-url }}
       with:
         context: ${{ github.action_path }}
         build-contexts: |
@@ -191,12 +190,12 @@ runs:
           BUILD_DATE=${{ env.BUILD_DATE }}
           IMAGE_TITLE=${{ inputs.image-title }}
           NUXEO_CONNECT_MODULES=${{ env.SANITIZED_CONNECT_MODULES }}
+          NUXEO_CONNECT_URL=${{ inputs.nuxeo-connect-url }}
           PACKAGES_LIST=${{ env.SANITIZED_PACKAGES }}
           PACKAGES_AUTH_USER=${{ inputs.os-packages-user }}
           PACKAGES_AUTH_TOKEN=${{ inputs.os-packages-token }}
         secret-envs: |
           NUXEO_CLID=NUXEO_CLID
-          NUXEO_CONNECT_URL=NUXEO_CONNECT_URL
         secret-files: |
           nuxeo-private=${{ github.action_path }}/nuxeo-private.repo
         outputs: ${{ inputs.image-outputs }}
