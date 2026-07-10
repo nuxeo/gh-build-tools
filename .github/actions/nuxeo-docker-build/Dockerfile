@@ -7,11 +7,8 @@ ARG BUILD_TAG=unknown
 ARG SCM_REF=unknown
 ARG VERSION=unknown
 ARG BUILD_DATE=""
-ARG PACKAGES_AUTH_USER
-ARG PACKAGES_AUTH_TOKEN
 ARG PACKAGES_LIST
 ARG NUXEO_CONNECT_MODULES
-ARG NUXEO_CONNECT_URL
 ARG IMAGE_TITLE="Nuxeo Server"
 ARG IMAGE_LICENSE="Apache 2.0"
 
@@ -33,9 +30,11 @@ USER root
 
 # Combined system dependencies and secure private repo installation into a single RUN to reduce image layers
 # --- Install system dependencies and secure private repo ---
-RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo <<EOC
+RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
+    --mount=type=secret,id=PACKAGES_AUTH_USER,env=PACKAGES_AUTH_USER \
+    --mount=type=secret,id=PACKAGES_AUTH_TOKEN,env=PACKAGES_AUTH_TOKEN <<EOC
 dnf -y install gettext
-envsubst </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo
+envsubst '${PACKAGES_AUTH_USER} ${PACKAGES_AUTH_TOKEN}' </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo
 dnf -y install --skip-broken $PACKAGES_LIST
 rm /etc/yum.repos.d/nuxeo-private.repo
 dnf clean all
@@ -45,7 +44,8 @@ EOC
 USER nuxeo
 
 RUN --mount=type=bind,from=modules,target=/modules \
-    --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID <<EOC
+    --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID \
+    --mount=type=secret,id=NUXEO_CONNECT_URL,env=NUXEO_CONNECT_URL <<EOC
 if [ -n "${NUXEO_CONNECT_MODULES}" ]; then
     if [ -n "${NUXEO_CONNECT_URL}" ]; then
         /install-packages.sh --clid ${NUXEO_CLID} --connect-url ${NUXEO_CONNECT_URL} ${NUXEO_CONNECT_MODULES}

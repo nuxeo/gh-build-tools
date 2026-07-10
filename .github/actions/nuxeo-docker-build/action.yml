@@ -190,12 +190,13 @@ runs:
           BUILD_DATE=${{ env.BUILD_DATE }}
           IMAGE_TITLE=${{ inputs.image-title }}
           NUXEO_CONNECT_MODULES=${{ env.SANITIZED_CONNECT_MODULES }}
-          NUXEO_CONNECT_URL=${{ inputs.nuxeo-connect-url }}
           PACKAGES_LIST=${{ env.SANITIZED_PACKAGES }}
-          PACKAGES_AUTH_USER=${{ inputs.os-packages-user }}
-          PACKAGES_AUTH_TOKEN=${{ inputs.os-packages-token }}
         secret-envs: |
           NUXEO_CLID=NUXEO_CLID
+        secrets: |
+          NUXEO_CONNECT_URL=${{ inputs.nuxeo-connect-url }}
+          PACKAGES_AUTH_USER=${{ inputs.os-packages-user }}
+          PACKAGES_AUTH_TOKEN=${{ inputs.os-packages-token }}
         secret-files: |
           nuxeo-private=${{ github.action_path }}/nuxeo-private.repo
         outputs: ${{ inputs.image-outputs }}
