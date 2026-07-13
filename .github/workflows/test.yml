@@ -178,7 +178,7 @@ jobs:
       (github.actor != 'dependabot[bot]' && github.event_name != 'pull_request_review')
     runs-on: ubuntu-latest
     env:
-      NUXEO_CONNECT_MODULE: nuxeo-web-ui
+      NUXEO_CONNECT_MODULE: nuxeo-web-ui replace-administrator-user
       NUXEO_LOCAL_MODULE_PACKAGE: nuxeo-ai-image-quality-package
       NUXEO_LOCAL_MODULE: nuxeo-ai-image-quality
       NUXEO_LOCAL_MODULES_PATH: addons
