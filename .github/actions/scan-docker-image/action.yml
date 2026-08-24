@@ -70,7 +70,7 @@ runs:
         echo "FULL_IMAGE_NAME=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" >> "$GITHUB_ENV"
 
     - name: Log in to Docker registry
-      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-username }}
@@ -114,7 +114,7 @@ runs:
         vex: ${{ inputs.vex }}
 
     - name: Upload SARIF results to GitHub code scanning
-      uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
       if: ${{ inputs.upload-sarif == 'true' }}
       with:
         sarif_file: ${{ steps.scan-sarif.outputs.sarif }}

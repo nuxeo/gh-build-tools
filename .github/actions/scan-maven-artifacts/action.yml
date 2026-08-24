@@ -60,7 +60,7 @@ runs:
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Setup Maven Build
-      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@7398a98d9cc4c317e9d1d08101fb63b5cd895c4f # v0.3.0
+      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@b69f8529e843a9525310d704d1f7a8fe1f5d103b # v0.15.1
       with:
         java-version: ${{ inputs.java-version }}
 
@@ -134,7 +134,7 @@ runs:
         vex: ${{ inputs.vex }}
 
     - name: Upload SARIF results to GitHub code scanning
-      uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
       if: ${{ inputs.upload-sarif == 'true' }}
       with:
         sarif_file: ${{ steps.scan-sarif.outputs.sarif }}
