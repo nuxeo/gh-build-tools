@@ -101,7 +101,7 @@ runs:
         key: maven-dependency-plugin-3.8.1
 
     - name: Scan Maven artifacts with Grype - JSON output
-      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
       if: ${{ inputs.upload-json == 'true' }}
       with:
         by-cve: ${{ inputs.by-cve }}
@@ -121,7 +121,7 @@ runs:
         path: target/${{ inputs.output-filename }}.json
 
     - name: Scan Maven artifacts with Grype - SARIF output
-      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
       if: ${{ inputs.upload-sarif == 'true' }}
       id: scan-sarif
       with:
@@ -134,13 +134,13 @@ runs:
         vex: ${{ inputs.vex }}
 
     - name: Upload SARIF results to GitHub code scanning
-      uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+      uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
       if: ${{ inputs.upload-sarif == 'true' }}
       with:
         sarif_file: ${{ steps.scan-sarif.outputs.sarif }}
 
     - name: Scan Maven artifacts with Grype - table output
-      uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7.4.0
+      uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
       with:
         by-cve: ${{ inputs.by-cve }}
         fail-build: ${{ inputs.fail-build }}
