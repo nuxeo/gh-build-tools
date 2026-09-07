@@ -16,6 +16,8 @@ Here follows the list of GitHub Actions topics available in the current document
     - [scan-maven-artifacts](#scan-maven-artifacts)
     - [setup-maven-build](#setup-maven-build)
     - [update-nuxeo-parent](#update-nuxeo-parent)
+  - [Reusable workflows](#reusable-workflows)
+    - [bot-auto-merge](#bot-auto-merge)
   - [Release](#release)
 
 ## GitHub Actions
@@ -303,6 +305,37 @@ Example usage:
 ```
 
 For the list of all available inputs, check `action.yml` file.
+
+## Reusable workflows
+
+Unlike the actions above, these are complete workflows called at the job level
+with `uses:`. They own the job definition, so the caller only needs to declare
+its triggers and the permissions to grant.
+
+Note that a called workflow can only restrict the permissions granted by its
+caller, never widen them. The caller must therefore grant every permission the
+reusable workflow needs.
+
+### bot-auto-merge
+
+Approves and enables auto-merge on pull requests opened by `dependabot[bot]`
+(minor and patch version updates only) and by `nuxeo-platform-jx-bot`.
+
+Example usage:
+
+```yaml
+name: Bot Auto Merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    uses: nuxeo/gh-build-tools/.github/workflows/bot-auto-merge.yml@v0.15.1
+```
 
 ## Release
 
