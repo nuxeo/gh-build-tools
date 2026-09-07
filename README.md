@@ -18,6 +18,7 @@ Here follows the list of GitHub Actions topics available in the current document
     - [update-nuxeo-parent](#update-nuxeo-parent)
   - [Reusable workflows](#reusable-workflows)
     - [bot-auto-merge](#bot-auto-merge)
+    - [codeql](#codeql)
   - [Release](#release)
 
 ## GitHub Actions
@@ -336,6 +337,62 @@ jobs:
   auto-merge:
     uses: nuxeo/gh-build-tools/.github/workflows/bot-auto-merge.yml@v0.15.1
 ```
+
+### codeql
+
+Runs a [CodeQL](https://codeql.github.com/) code scanning analysis, one job per
+language, and uploads the results to the repository's code scanning alerts.
+
+It defaults to the `none` build mode, which analyzes the sources without
+building them. This requires no language toolchain setup, and analyzes every
+source file in the repository rather than only the ones covered by the default
+build. For a repository that needs a build to be analyzed accurately, set
+`build-mode` to `autobuild`.
+
+Example usage:
+
+```yaml
+name: CodeQL
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    uses: nuxeo/gh-build-tools/.github/workflows/codeql.yml@v0.21.0
+    ## all inputs are optional
+    # with:
+    #   build-mode: autobuild
+    #   languages: '["java"]'
+    #   queries: security-extended
+```
+
+Inputs:
+
+- `build-mode`: CodeQL build mode, `none` (default), `autobuild` or `manual`.
+- `config`: inline CodeQL configuration, as a YAML string, passed to the init
+  action. Empty by default.
+- `dependency-caching`: CodeQL dependency caching, `true` (default), `false`,
+  `restore` or `store`.
+- `languages`: JSON array of CodeQL languages to analyze, one matrix job per
+  language. Defaults to `["java", "javascript", "actions"]`.
+- `queries`: comma-separated queries or query suites to run in addition to the
+  default ones, for instance `security-extended`. Empty by default.
+- `timeout-minutes`: timeout in minutes of each per-language analysis job,
+  `60` by default.
 
 ## Release
 
