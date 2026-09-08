@@ -1,0 +1,67 @@
+name: CodeQL
+
+on:
+  # Make workflow reusable, thus callable from other repositories
+  workflow_call:
+    inputs:
+      build-mode:
+        description: "CodeQL build mode: 'none', 'autobuild' or 'manual'."
+        type: string
+        default: none
+      config:
+        description: "Inline CodeQL configuration, as a YAML string, passed to the init action."
+        type: string
+        default: ''
+      dependency-caching:
+        description: "CodeQL dependency caching: 'true', 'false', 'restore' or 'store'."
+        type: string
+        default: 'true'
+      languages:
+        description: "JSON array of CodeQL languages to analyze, one matrix job per language."
+        type: string
+        default: '["java", "javascript", "actions"]'
+      queries:
+        description: "Comma-separated queries or query suites to run in addition to the default ones."
+        type: string
+        default: ''
+      timeout-minutes:
+        description: "Timeout in minutes of each per-language analysis job."
+        type: number
+        default: 60
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(inputs.languages) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Initializes the CodeQL tools for scanning.
+      # With the default 'none' build mode, no build is run: CodeQL analyzes the
+      # sources directly. This covers all sources in the repository, including
+      # those that are not part of the default build, and keeps the workflow
+      # free of any language toolchain setup.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          build-mode: ${{ inputs.build-mode }}
+          config: ${{ inputs.config }}
+          dependency-caching: ${{ inputs.dependency-caching }}
+          languages: ${{ matrix.language }}
+          queries: ${{ inputs.queries }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: "/language:${{ matrix.language }}"

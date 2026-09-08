@@ -16,6 +16,9 @@ Here follows the list of GitHub Actions topics available in the current document
     - [scan-maven-artifacts](#scan-maven-artifacts)
     - [setup-maven-build](#setup-maven-build)
     - [update-nuxeo-parent](#update-nuxeo-parent)
+  - [Reusable workflows](#reusable-workflows)
+    - [bot-auto-merge](#bot-auto-merge)
+    - [codeql](#codeql)
   - [Release](#release)
 
 ## GitHub Actions
@@ -303,6 +306,93 @@ Example usage:
 ```
 
 For the list of all available inputs, check `action.yml` file.
+
+## Reusable workflows
+
+Unlike the actions above, these are complete workflows called at the job level
+with `uses:`. They own the job definition, so the caller only needs to declare
+its triggers and the permissions to grant.
+
+Note that a called workflow can only restrict the permissions granted by its
+caller, never widen them. The caller must therefore grant every permission the
+reusable workflow needs.
+
+### bot-auto-merge
+
+Approves and enables auto-merge on pull requests opened by `dependabot[bot]`
+(minor and patch version updates only) and by `nuxeo-platform-jx-bot`.
+
+Example usage:
+
+```yaml
+name: Bot Auto Merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    uses: nuxeo/gh-build-tools/.github/workflows/bot-auto-merge.yml@v0.15.1
+```
+
+### codeql
+
+Runs a [CodeQL](https://codeql.github.com/) code scanning analysis, one job per
+language, and uploads the results to the repository's code scanning alerts.
+
+It defaults to the `none` build mode, which analyzes the sources without
+building them. This requires no language toolchain setup, and analyzes every
+source file in the repository rather than only the ones covered by the default
+build. For a repository that needs a build to be analyzed accurately, set
+`build-mode` to `autobuild`.
+
+Example usage:
+
+```yaml
+name: CodeQL
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    uses: nuxeo/gh-build-tools/.github/workflows/codeql.yml@v0.21.0
+    ## all inputs are optional
+    # with:
+    #   build-mode: autobuild
+    #   languages: '["java"]'
+    #   queries: security-extended
+```
+
+Inputs:
+
+- `build-mode`: CodeQL build mode, `none` (default), `autobuild` or `manual`.
+- `config`: inline CodeQL configuration, as a YAML string, passed to the init
+  action. Empty by default.
+- `dependency-caching`: CodeQL dependency caching, `true` (default), `false`,
+  `restore` or `store`.
+- `languages`: JSON array of CodeQL languages to analyze, one matrix job per
+  language. Defaults to `["java", "javascript", "actions"]`.
+- `queries`: comma-separated queries or query suites to run in addition to the
+  default ones, for instance `security-extended`. Empty by default.
+- `timeout-minutes`: timeout in minutes of each per-language analysis job,
+  `60` by default.
 
 ## Release
 
