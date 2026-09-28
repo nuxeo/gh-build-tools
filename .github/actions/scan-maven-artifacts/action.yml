@@ -73,6 +73,7 @@ runs:
 
     - name: Fetch Maven artifacts
       env:
+        ARTIFACTS: ${{ inputs.artifacts }}
         MVN_REPO_USERNAME: ${{ inputs.mvn-repo-username }}
         MVN_REPO_PASSWORD: ${{ inputs.mvn-repo-password }}
       shell: bash
@@ -81,7 +82,7 @@ runs:
         mkdir -p target
         STANDALONE_POM="${{ github.action_path }}/standalone-pom.xml"
 
-        for artifact in $(echo "${{ inputs.artifacts }}" | tr ',' ' '); do
+        for artifact in $(echo "$ARTIFACTS" | tr ',' ' '); do
           echo "Processing $artifact"
           mvn -f "${STANDALONE_POM}" -B \
             org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get \
