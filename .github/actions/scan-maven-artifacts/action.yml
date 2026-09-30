@@ -60,7 +60,7 @@ runs:
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Setup Maven Build
-      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@994fee94dac817768f11b2009fcca8c09abbfb73 # v0.20.1
+      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@cb4deda8233ae020d0ee558e9395cfa99d787a1f # v0.20.2
       with:
         java-version: ${{ inputs.java-version }}
 
