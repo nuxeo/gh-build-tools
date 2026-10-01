@@ -38,7 +38,7 @@ runs:
         fetch-tags: true
 
     - name: Setup Maven Build
-      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@cb4deda8233ae020d0ee558e9395cfa99d787a1f # v0.20.2
+      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@369e9f656fb2eedd24d5fcdcb64bb98cff68b98f # v0.21.0
       with:
         java-version: ${{ inputs.java-version }}
 
