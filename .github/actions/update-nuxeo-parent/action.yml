@@ -38,7 +38,7 @@ runs:
         fetch-tags: true
 
     - name: Setup Maven Build
-      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@a10ad0bdb8afe3531df63387f917a710ffa07183 # v0.22.1
+      uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@1dab6cfb3c780da20cc0598b1573d9d114566978 # v0.23.0
       with:
         java-version: ${{ inputs.java-version }}
 
@@ -115,7 +115,7 @@ runs:
         echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_ENV
 
     - name: Install Updatecli
-      uses: Alfresco/alfresco-build-tools/.github/actions/setup-updatecli@c176315c6b0b3e3bbf022ea444944fb903c47e0e # v19.2.1
+      uses: Alfresco/alfresco-build-tools/.github/actions/setup-updatecli@d92786682ac60f54c36b3130fa6d86b599c503d5 # v19.3.0
       with:
         # bug in version 0.112.0, see github.com/updatecli/updatecli/pull/7223
         version: '0.111.0'
