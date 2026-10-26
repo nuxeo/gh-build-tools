@@ -30,7 +30,7 @@ runs:
       fi
       echo "MAVEN_SETTINGS_PATH=$MAVEN_SETTINGS_PATH" >> $GITHUB_ENV
   - name: "Setup Java Build"
-    uses: Alfresco/alfresco-build-tools/.github/actions/setup-java-build@5d33aec6cf9ffd70982c404ebf5ebadedd7405d9 # v19.5.0
+    uses: Alfresco/alfresco-build-tools/.github/actions/setup-java-build@768b583839a22ef7d882da0c5b82af3832197d00 # v19.7.1
     with:
       java-version: ${{ inputs.java-version }}
       java-distribution: ${{ inputs.java-distribution }}
