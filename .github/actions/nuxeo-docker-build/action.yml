@@ -123,7 +123,7 @@ runs:
         mkdir -p ${{ github.workspace }}/${{ inputs.nuxeo-local-modules-path }}
 
     - name: Login to base image registry
-      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
       with:
         registry: docker-private.packages.nuxeo.com
         username: ${{ inputs.base-registry-username }}
@@ -148,7 +148,7 @@ runs:
 
     - name: Login to target registry
       if: ${{ inputs.push-image == 'true' && inputs.local-registry == 'false' }}
-      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-username }}
