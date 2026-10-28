@@ -35,3 +35,4 @@ runs:
       java-version: ${{ inputs.java-version }}
       java-distribution: ${{ inputs.java-distribution }}
       maven-settings: ${{ env.MAVEN_SETTINGS_PATH }}
+      cache-key-prefix: ${{ inputs.cache-key-prefix }}
